@@ -1,1 +1,1 @@
-# News-Signal-Detection-Pipeline
+# Targeted-News-Analysis-Pipeline
