@@ -1,15 +1,9 @@
-from dotenv import load_dotenv
-import config
 import pandas as pd
-import numpy as np
-import re
-import random
 from datetime import datetime, timezone
-import time
-
 from google import genai
 import os
-
+from dotenv import load_dotenv
+import config
 from risk_pipeline.scrape_headlines import scrape_headlines
 from risk_pipeline.identify_risk_headlines import identify_risk_headlines
 from risk_pipeline.scrape_stories import scrape_stories
@@ -21,15 +15,13 @@ from risk_pipeline.summarise_stories import summarise_stories
 # PARAMETERS
 # ----------------------------------------------------------------------
 
-llm_headline_batch_size = 40
 llm_retry_attempts = 3
 llm_wait_time = 12
 llm_story_words_batch_size = 12000
 
 today_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-
 entity_description = 'a logistics firm'
-risk_type = 'port disruption events'
+risk_type = 'transport disruption events'
 risk_confidence_threshold = 95
 
 
@@ -53,25 +45,28 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 # ----------------------------------------------------------------------
 
 
-
+'''
 headlines_df = scrape_headlines('links.csv', config)
-print(headlines_df)
+headlines_df.to_csv('headlines.csv', index=False)
+'''
+headlines_df = pd.read_csv('headlines.csv')
+
+risk_headlines_df = identify_risk_headlines(
+    client, 
+    headlines_df, 
+    entity_description, 
+    risk_type,
+    risk_confidence_threshold,
+    config
+)
+
+print(risk_headlines_df)
 
 
 
 
 
 '''
-risk_headlines_df = identify_risk_headlines(
-    client, 
-    headlines_df, 
-    llm_retry_attempts, 
-    llm_wait_time, 
-    llm_headline_batch_size,
-    entity_description, 
-    risk_type,
-    risk_confidence_threshold
-)
 
 story_texts = scrape_stories(risk_headlines_df, request_timeout)
 

@@ -1,7 +1,5 @@
-import pandas as pd
-import numpy as np
-import re
 import time
+import re
 from risk_pipeline.prompts import headline_identification_prompt 
 
 
@@ -9,64 +7,99 @@ from risk_pipeline.prompts import headline_identification_prompt
 # HELPER FUNCTIONS
 # ----------------------------------------------------------------------
 
-def combine_headlines(headlines):
+def number_headlines(headlines_df):
     """
-    Combines all headlines texts into a single string separated by index numbers
+    Convert a DataFrame of headlines into numbered headline strings.
+
+    Args:
+        headlines_df (pd.DataFrame):
+            DataFrame containing a 'Headline' column with scraped headlines.
+
+    Returns:
+        list (str):
+            A list of headline strings each prefixed with an index number.
     """
-    indices = headlines.Headline.index
-
-    combined_text = []
-    for i, headline in enumerate(headlines.Headline):
-        combined_text.extend(str(indices[i]+1) + '. ' + headline + ' ')
-
-    return ''.join(combined_text)
+    return [
+        f'{i}. {headline or ""}'
+        for i, headline in enumerate(headlines_df['headline'], start=1)
+    ]
 
 
-def split_headlines(combined_headlines, llm_headline_batch_size):
+def batch_headlines(numbered_headlines, config):
     """
-    Splits the combined headlines text into batches ready for LLM processing
-    """
-    split_headlines = re.split(r'(?=\b\d+\.)', combined_headlines)
-    no_of_splits = int(np.ceil(len(split_headlines) / llm_headline_batch_size))
+    Split numbered headlines into newline-separated batches for LLM processing.
 
-    chuncks = []
-    for i in range(no_of_splits):
-        start = i * llm_headline_batch_size
-        end = (i+1) * llm_headline_batch_size
-        chuncks.append(
-            ' '.join(split_headlines[start:end])
+    Args:
+        numbered_headlines (list):
+            List of numbered headline strings representing batches for LLM processing.
+        config (module):
+            Configuration module containing 'LLM_HEADLINE_BATCH_SIZE'.
+
+    Returns:
+        list:
+            List of strings containing numbered headlines whose size is based on 'LLM_HEADLINE_BATCH_SIZE'. 
+    """
+    batch_size = config.LLM_HEADLINE_BATCH_SIZE
+    if not numbered_headlines:
+        return []
+
+    batches = []
+
+    for start in range(0, len(numbered_headlines), batch_size):
+        batches.append(
+            '\n'.join(numbered_headlines[start:start + batch_size])
         )
-    return chuncks
+
+    return batches
 
 
-def extract_index_numbers(response):
+def extract_index_numbers(response, max_len):
     """
-    Extracts the headlines index numbers from a gemini response.
+    Extract index numbers from a Gemini response containing a Python-style list.
+
+    Args:
+        response (object):
+            Gemini response object expected to contain a 'text' attribute.
+        max_len (int):
+            Maximum number of headlines (used to validate indices before they are used with '.iloc').
+
+    Returns:
+        tuple:
+            indices (list):
+                List of zero-based indices extracted from the Gemini response.
+            status (str):
+                Parsing status (e.g. 'ok', 'empty_response', 'no_list', 'parse_error').
     """
     if response is None:
         print('Error: Gemini response is None')
-        return []
+        return [], 'empty_response'
     
     text = getattr(response, 'text', None)
 
     if not text:
-        print('Error: Gemini returned empty response')
-        return []
-            
-    try: 
-        if "[" not in text or "]" not in text:
-            print('Error: no python list found in Gemini response')
-            return []
-        
-        inside = text.split('[', 1)[1].split(']', 1)[0]
-        indices = [int(x.strip()) - 1 for x in inside.split(",") if x.strip().isdigit()]
-        print('Extracted', str(len(indices)), 'indices')
-        return indices
+        print('Error: Gemini returned an empty response')
+        return [], 'empty_response'
     
-    except Exception:
-        print('Error: unable to extract index numbers from python list:')
-        print(text)
-        return []
+    if "[" not in text or "]" not in text:
+        print('Error: no python list found in Gemini response')
+        return [], 'no_list'
+    
+    try:
+        inside = text.split('[', 1)[1].split(']', 1)[0]
+
+        indices = [int(n) - 1 for n in re.findall(r"\d+", inside)]
+
+        validated_indices = [i for i in indices if 0 <= i < max_len]
+
+        print(f'Extracted {len(validated_indices)} indices')
+
+        return validated_indices, 'ok'
+    
+    except ValueError as e:
+        print('Error: unable to extract index numbers from python list:\n')
+        print(f'    text={text}')
+        print(f'    {type(e).__name__}: {e}')
+        return [], 'parse_error'
 
 
 
@@ -74,62 +107,124 @@ def extract_index_numbers(response):
 # RISK HEADINE IDENTIFICATION 
 # ----------------------------------------------------------------------
 
-def return_risk_headlines(client, llm_retry_attempts, llm_wait_time, prompt, i):
+def return_risk_headlines(client, prompt, i, max_len, config):
     """
-    Uses Gemini to return identified risk headlines for a given headlines chunk. 
-    """
-    
-    for attempt in range(1, llm_retry_attempts + 1):
+    Call Gemini to identify risk-relevant headline indices for a single headline batch. 
 
+    Args:
+        client (object):
+             Gemini client instance. 
+        prompt (str):
+            The full prompt text for this batch of headlines.
+        i (int):
+            Batch number (used for logging).
+        max_len (int):
+            Maximum number of headlines (used to validate indices before they are used with '.iloc').
+        config (module):
+            Configuration module containing 'LLM_RETRY_ATTEMPTS', 'LLM_WAIT_TIME', 
+            'MODEL' and 'LLM_HEADLINE_BATCH_SIZE'.
+
+    Returns:
+        list:
+            List of zero-based indices representing selected risk headlines.
+    """
+    retry_attempts = config.LLM_RETRY_ATTEMPTS
+    wait_time = config.LLM_WAIT_TIME
+    model = config.MODEL
+
+    
+    for attempt in range(1, retry_attempts + 1):
         try:
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model=model, 
                 contents=prompt
             )
-            return extract_index_numbers(response)
+            index_numbers, status = extract_index_numbers(response, max_len)
+
+            if status == 'ok':
+                return index_numbers
+            else:
+                if attempt < retry_attempts:
+                    print(f'Error: could not parse index numbers for batch {i} on attempt {attempt}/{retry_attempts}')
+                    time.sleep(wait_time * attempt)
+                else:
+                    print(f'Error: parsing failed for batch {i} after {retry_attempts} attempts.')
+                    return []
 
         except Exception as e:
-            if attempt < llm_retry_attempts:
-                time.sleep(llm_wait_time * attempt)
-                print(f'Error: LLM call failed on attempt {attempt}/{llm_retry_attempts}')
-                print(f'Error type: {type(e).__name__}')
-                print(f'Error message: {e}')
+            if attempt < retry_attempts:
+                print(f'Error: LLM call failed batch {i} on attempt {attempt}/{retry_attempts}')
+                print(f'    Error type: {type(e).__name__}')
+                print(f'    Error message: {e}')
+                time.sleep(wait_time * attempt)
             else:
-                print(f'Error: LLM call failed for chunk {i} after {llm_retry_attempts} attempts: {e}')
-                return []
+                print(f'Error: LLM call failed for batch {i} after {retry_attempts} attempts.')
+                print(f'    Error type: {type(e).__name__}')
+                print(f'    Error message: {e}')
+                return []         
 
 
 def identify_risk_headlines(
         client, 
         headlines_df, 
-        llm_retry_attempts, 
-        llm_wait_time, 
-        llm_headline_batch_size,
         entity_description, 
         risk_type,
-        risk_confidence_threshold
+        risk_confidence_threshold,
+        config
     ):
     """
-    Returns a data frame of potential risk headlines from a headlines data frame. 
-    """
-    combined_headlines = combine_headlines(headlines_df)
+    Identify potential risk-related headlines using an LLM.
 
-    chunks = split_headlines(combined_headlines, llm_headline_batch_size)
+    Args:
+        client (object):
+            Gemini client instance. 
+        headlines_df (pd.DataFrame):
+            DataFrame containing a 'Headline' column with scraped headlines.
+        entity_description (str):
+            Description of the entity type of concern (e.g. 'a logistics firm').
+        risk_type (str):
+            Description of the risk category being identified (e.g. 'port disruption events').
+        risk_confidence_threshold (int):
+            Minimum confidence level the LLM should use when selecting headlines.
+        config (module):
+            Configuration module containing 'LLM_RETRY_ATTEMPTS', 'LLM_WAIT_TIME', 
+            'MODEL' and 'LLM_HEADLINE_BATCH_SIZE'.
+
+    Returns:
+        pd.DataFrame:
+            Subset of the input DataFrame containing headlines identified as potential risks.
+    """
+    numbered_headlines = number_headlines(headlines_df)
+
+    max_len = len(headlines_df)
+
+    headline_batches = batch_headlines(numbered_headlines, config)
 
     all_indices = []
-    for i, chunk in enumerate(chunks):
 
-        prompt = headline_identification_prompt(entity_description, risk_type, risk_confidence_threshold, chunk)
+    for i, batch in enumerate(headline_batches, start=1):
+        prompt = headline_identification_prompt(
+            entity_description, 
+            risk_type, 
+            risk_confidence_threshold, 
+            batch
+        )
 
         indices = return_risk_headlines(
             client,
-            llm_retry_attempts,
-            llm_wait_time,
             prompt,
-            i
+            i,
+            max_len,
+            config
         )
+
         all_indices.extend(indices)
 
-    print(f"\nTotal indices: {len(all_indices)}\n")
+    dup_count = len(all_indices) - len(set(all_indices))
+
+    if dup_count > 0:
+        print(f'Warning: {dup_count} duplicate indices')
+
+    print(f'\nTotal indices: {len(all_indices)}\n')
 
     return headlines_df.iloc[all_indices]

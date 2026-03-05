@@ -2,22 +2,46 @@
 # PROMPT BUILDER FUNCTIONS
 # ----------------------------------------------------------------------
 
-def headline_identification_prompt(entity_description, risk_type, risk_confidence_threshold, chunk):
+def headline_identification_prompt(
+        entity_description, 
+        risk_type, 
+        risk_confidence_threshold, 
+        batch
+    ):
     """
-    Constructs a structured LLM prompt for identifying risk-relevant headlines.
+    Build an LLM prompt for identifying risk-relevant headlines.
+
+    Args:
+        entity_description (str):
+            Description of the entity potentially affected by the risk (e.g. 'a logistics firm').
+        risk_type (str):
+            Type of risk to evaluate (e.g. 'transport disruption events').
+        risk_confidence_threshold (int):
+            Minimum confidence percentage the model should have before flagging a headline as risky.
+        batch (str):
+            String containing numbered headlines to evaluate.
+
+    Returns:
+        str:
+            Formatted prompt string to be sent to the LLM.
     """
     return f"""
     You are a skilled analyst. 
     I'm going to give you multiple articles sources separated by index numbers (1., 32., 146. etc). 
-    I want you to return the indices of all those headlines which pose a potential risk to {entity_description} in terms of {risk_type}. 
-    Only return indices for those headlines you are at least {risk_confidence_threshold}% sure pose such as risk. 
-    The criteria for such a risk includes the potential disruption of governance and the political environment. 
-    I want you to return the indices (1, 32, 146, etc.) of all those headlines that may pose such a risk.
+    I want you to return the indices of headlines which pose a potential risk to {entity_description} in terms of {risk_type}. 
+    Only return indices for those headlines you are at least {risk_confidence_threshold}% sure pose such a risk. 
+    Return the exact numbers shown next to the headlines, not relative positions within the headlines batch.
     I want you to return these indices as a python list without explanatory text or comments. 
     If there are no sources that pose such a risk, I want you to return an empty python list. 
         
-    These are the article sources: '{chunk}'
+    These are the article sources: '{batch}'
     """
+
+
+
+
+
+
 
 
 def summarization_prompt(today_date, entity_description, risk_type, story_text):

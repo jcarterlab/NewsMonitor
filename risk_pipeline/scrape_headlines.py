@@ -12,9 +12,6 @@ from urllib.parse import urljoin
 import traceback
 
 
-__all__ = ["scrape_headlines"]
-
-
 # ----------------------------------------------------------------------
 # HELPER FUNCTIONS
 # ----------------------------------------------------------------------
@@ -24,11 +21,11 @@ def extract_text(element):
     Return stripped text for a BeautifulSoup element.
 
     Args:
-        element (bs4.element.Tag | None):
+        element (bs4.element.Tag):
             BeautifulSoup Tag object from which text should be extracted.
 
     Returns:
-        str | None:
+        str:
             Stripped element text, or None if element is None or has no text. 
     """
     if element is None:
@@ -56,7 +53,7 @@ def extract_link(element, base_url):
             Initial part of the URL needed to create a full URL from relative links.
 
     Returns:
-        str | None:
+        str:
             Absolute URL, or None if not possible to construct.
     """
     if element is None:
@@ -90,7 +87,7 @@ def scrape_headline_elements(page_url, tag, config):
         tag (str):
             HTML tag used to identify headline elements.
         config (module): 
-            Config module with REQUEST_TIMEOUT, etc.
+            Configuration module containing REQUEST_TIMEOUT.
 
     Returns:
         list[bs4.element.Tag]:
@@ -144,7 +141,7 @@ def build_headlines_dataframe(
         story_class (str): 
             Class name used later to scrape the news story body text.
         config (module): 
-            Config module with MIN_HEADLINE_LENGTH, etc.
+            Configuration module containing MIN_HEADLINE_LENGTH.
     
     Returns:
         pd.DataFrame:
@@ -198,7 +195,7 @@ def scrape_headlines(links_csv_path, config):
         links_csv_path (str): 
             Path to CSV containing scraping configs per source.
         config (module): 
-            Config module with REQUEST_TIMEOUT, MIN_HEADLINE_LENGTH, etc.
+            Configuration module containing REQUEST_TIMEOUT and MIN_HEADLINE_LENGTH. 
             
     Returns:
         pd.DataFrame: 
