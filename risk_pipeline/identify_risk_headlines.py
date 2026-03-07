@@ -1,3 +1,10 @@
+"""
+Risk headline identification module.
+
+This module processes scraped news headlines and uses an LLM to identify 
+those that may represent risks to a specified entity and risk category.
+"""
+
 import time
 import re
 from risk_pipeline.prompts import headline_identification_prompt 
@@ -183,7 +190,7 @@ def identify_risk_headlines(
         entity_description (str):
             Description of the entity type of concern (e.g. 'a logistics firm').
         risk_type (str):
-            Description of the risk category being identified (e.g. 'port disruption events').
+            Description of the risk category being identified (e.g. 'transport disruption events').
         risk_confidence_threshold (int):
             Minimum confidence level the LLM should use when selecting headlines.
         config (module):
