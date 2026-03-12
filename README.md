@@ -75,9 +75,9 @@ the end user
 ## 📐 Architectural Decisions
 
 
-- **Batch headline identification:** The scraped headlines are evaluated in batches using a lightweight LLM model to improve efficiency. Headlines are joined together, separated by index numbers and fed into the LLM via a prompt asking it to return only the indices of potential risk stories as a Python-style list.
+- **Batch headline identification:** The scraped headlines are evaluated in batches using a lightweight LLM to improve efficiency. Headlines are joined together and separated by index numbers. The LLM is then asked to return only the indices of potential risk stories as a Python-style list.
 
-- **Two-stage LLM summarisation:** The scraped story text undergoes a two-stage LLM summarisation process to improve relevance. The story text is compiled into batches and summarised using a lightweight LLM model before an advanced model is instructed to use critical judgement in producing a concise final summary. 
+- **Two-stage LLM summarisation:** The scraped story text undergoes multiple rounds of summarisation to improve relevance. The story text is batched and summarised using a lightweight LLM. An advanced LLM is then asked to use judgement to produce a concise summary of these summaries. 
 
 
 ## 🗂️ Project Structure
