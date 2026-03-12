@@ -82,14 +82,15 @@ the end user
 
 ## 🗂️ Project Structure
 
-```
-targeted-news-analysis-pipeline
+```text
+targeted-news-monitoring-pipeline
 │
 ├── main.py
 ├── config.py
 ├── links.csv
 │
-└── risk_pipeline
+└── news_monitoring_pipeline
+    ├── __init__.py
     ├── scrape_headlines.py
     ├── identify_risk_headlines.py
     ├── scrape_stories.py

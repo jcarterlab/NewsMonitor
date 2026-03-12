@@ -14,7 +14,7 @@ from risk_pipeline.summarise_stories import summarise_stories
 # MAIN PIPELINE
 # ----------------------------------------------------------------------
 
-def main_pipeline(client, today_date, config):
+def run_pipeline(client, today_date, config):
     """
     Run the complete targeted news monitoring pipeline.
 
@@ -53,5 +53,5 @@ if __name__ == "__main__":
     client = genai.Client(api_key=gemini_api_key)
     today_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     
-    final_summary = main_pipeline(client, today_date, config)
+    final_summary = run_pipeline(client, today_date, config)
     print(final_summary)

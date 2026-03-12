@@ -87,7 +87,7 @@ def scrape_headline_elements(page_url, tag, config):
         tag (str):
             HTML tag used to identify headline elements.
         config (module): 
-            Configuration module containing REQUEST_TIMEOUT.
+            Configuration module containing 'REQUEST_TIMEOUT'.
 
     Returns:
         list[bs4.element.Tag] | None:
@@ -141,7 +141,7 @@ def build_headlines_dataframe(
         story_class (str): 
             Class name used later to scrape the news story body text.
         config (module): 
-            Configuration module containing MIN_HEADLINE_LENGTH.
+            Configuration module containing 'MIN_HEADLINE_LENGTH'.
     
     Returns:
         pd.DataFrame:
@@ -192,32 +192,32 @@ def build_headlines_dataframe(
 # ORCHESTRATION FUNCTIONS 
 # ----------------------------------------------------------------------
 
-def scrape_headlines(links_csv_path, config):
+def scrape_headlines(config):
     """
     Scrape headline text and links for each news source defined in a links CSV.
 
     Args:
-        links_csv_path (str): 
-            Path to CSV containing scraping configs per source.
         config (module): 
-            Configuration module containing REQUEST_TIMEOUT and MIN_HEADLINE_LENGTH. 
+            Configuration module containing 'LINKS_FILE', 'REQUEST_TIMEOUT' and 
+            'MIN_HEADLINE_LENGTH'. 
             
     Returns:
         pd.DataFrame: 
             Combined headlines with columns including headline, link, story_tag and story_class. 
     """
+    links_path = config.LINKS_FILE
     try:
-        links_df = pd.read_csv(links_csv_path, encoding='utf-8')
+        links_df = pd.read_csv(links_path, encoding='utf-8')
     except FileNotFoundError:
-        raise RuntimeError(f'{links_csv_path} not found')
+        raise RuntimeError(f'{links_path} not found')
     
     if links_df.empty:
-        raise RuntimeError(f'{links_csv_path} is empty')
+        raise RuntimeError(f'{links_path} is empty')
     
     required_cols = {"page_url", "tag", "base_url", "story_tag", "story_class"}
     missing_cols = required_cols - set(links_df.columns)
     if missing_cols:
-        raise RuntimeError(f'{links_csv_path} missing required columns: {sorted(missing_cols)}')
+        raise RuntimeError(f'{links_path} missing required columns: {sorted(missing_cols)}')
 
     print(f'\nLinks to be scraped: {len(links_df)}\n')
 

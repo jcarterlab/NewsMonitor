@@ -106,6 +106,11 @@ def scrape_story_elements(story_url, story_tag, story_class, config):
     return elements 
 
 
+
+# ----------------------------------------------------------------------
+# ORCHESTRATION FUNCTIONS 
+# ----------------------------------------------------------------------
+
 def scrape_stories(risk_headlines_df, config):
     """
     Scrape text for successfully extracted news stories in the dataframe.
@@ -118,7 +123,7 @@ def scrape_stories(risk_headlines_df, config):
 
     Returns:
         list[str]:
-            List of story texts for stories successfully scraped.
+            List of raw scraped texts for successfully scraped news stories.
     """
     story_texts = []
     total_words = 0

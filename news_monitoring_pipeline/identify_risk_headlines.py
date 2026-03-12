@@ -44,7 +44,7 @@ def batch_headlines(numbered_headlines, config):
 
     Returns:
         list:
-            List of strings each containing up to LLM_HEADLINE_BATCH_SIZE numbered headlines.
+            List of strings each containing up to 'LLM_HEADLINE_BATCH_SIZE' numbered headlines.
     """
     batch_size = config.LLM_HEADLINE_BATCH_SIZE
     if not numbered_headlines:
