@@ -1,8 +1,8 @@
 # 📰 Targeted News Monitoring Pipeline
 
-A Python pipeline for news monitoring using web scraping, LLM classification and LLM summarisation. 
+A Python pipeline using web scraping and LLM-based risk categorisation and summarisation. 
 
-The system allows analysts to detect emerging risks such as supply chain disruptions, regulatory changes and geopolitical events more efficiently. It is particularly useful in regions with many non-English sources because LLMs are excellent at simultaneously translating and summarizing news content. Risk detection can be customised based on the entity of concern (e.g. a logistics firm), risk type (e.g. transport disruption events) and confidence rate (e.g. 95%). 
+The system allows analysts to detect emerging risks such as supply chain disruptions, regulatory changes and geopolitical events more efficiently. It is particularly useful in regions with many non-English sources because LLMs are excellent at simultaneously translating and summarizing raw news content. Risk detection can be customised based on the entity of concern (e.g. a logistics firm), risk type (e.g. transport disruption events) and confidence rate (e.g. 95%). 
 
 **Key technologies:** Python, BeautifulSoup, Pandas, Gemini API, prompt engineering.
 
@@ -88,6 +88,7 @@ targeted-news-monitoring-pipeline/
 ├── config.py
 ├── links.csv
 ├── .env.example
+├── pytest.ini
 │
 ├── data/
 │   └── .gitkeep
@@ -107,11 +108,14 @@ targeted-news-monitoring-pipeline/
 │   └── store_headlines.py
 │
 └── tests/
-    ├── __init__.py
-    ├── test_scrape_headlines.py
-    ├── test_identify_risk_headlines.py
-    ├── test_scrape_stories.py
-    └── test_summarise_stories.py
+    ├── utils/
+    │   └── test_database.py
+    │
+    └── news_monitoring_pipeline/
+        ├── test_scrape_headlines.py
+        ├── test_identify_risk_headlines.py
+        ├── test_scrape_stories.py
+        └── test_summarise_stories.py
 ```
 
 
@@ -156,9 +160,6 @@ Edit `links.csv` to provide the news listing URLs and the CSS selectors used to 
 Example:
 
 ```
-links.csv
-   │
-   ▼
 ┌───────────┬───────────────────────────┬───────────────────┬─────┬───────────┬─────────────┐
 │ website   │ page_url                  │ base_url          │ tag │ story_tag │ story_class │
 ├───────────┼───────────────────────────┼───────────────────┼─────┼───────────┼─────────────┤
@@ -219,7 +220,7 @@ Old headlines still present on a news listing site are dropped by comparing new 
 Scraped headlines are combined into numbered batches before a lightweight LLM is instructed to return only the indicies of potential risk headlines, decreasing the number of LLM calls needed for risk categorisation.
 
 - **Two-stage LLM summarisation**  
-Scraped story text is summarised by a lightweight LLM in batches before an advanced LLM is directed to produce a final executive summary from them using the expert judgement of a head analyst, minimizing irrelevant details. 
+Scraped story text is summarised by a lightweight LLM in batches before an advanced LLM is directed to produce a final executive summary using the expert judgement of a head analyst, minimizing irrelevant details. 
 
 
 ## 📃 License

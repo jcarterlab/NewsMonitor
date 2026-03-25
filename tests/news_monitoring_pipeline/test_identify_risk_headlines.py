@@ -16,6 +16,8 @@ from news_monitoring_pipeline.identify_risk_headlines import (
 def dummy_config():
     return SimpleNamespace(LLM_HEADLINE_BATCH_SIZE=2)
 
+
+
 # ----------------------------------------------------------------------
 # TESTS 
 # ----------------------------------------------------------------------

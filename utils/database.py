@@ -9,7 +9,7 @@ import sqlite3
 
 
 # ----------------------------------------------------------------------
-# DATABASE SETUP FUNCTIONS
+# INITIALISATION FUNCTIONS
 # ----------------------------------------------------------------------
 
 def initialise_database(config):
