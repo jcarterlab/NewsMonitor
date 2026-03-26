@@ -42,9 +42,10 @@ def run_pipeline(client, today_date, config):
     story_texts = scrape_stories(risk_headlines_df, config)
     final_summary = summarise_stories(client, story_texts, today_date, config)
 
-    # Storage
-    store_headlines(new_headlines_df, config)
-
+    # Storage (if summary generation is successful)
+    if final_summary and len(final_summary.split()) >= 50:
+        store_headlines(new_headlines_df, config)
+        
     return final_summary
 
 

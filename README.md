@@ -214,13 +214,13 @@ LLM_STORY_WORDS_BATCH_SIZE=12000
 ## 📐 Architectural Advantages
 
 - **Headline deduplication**  
-Old headlines still present on a news listing site are dropped by comparing new headlines against a database of previously processed headlines (`processed_headlines.db`), reducing unnecessary re-processing. 
+Previously processed headlines are dropped by comparing new headlines against a database of those successfully processed in past runs (`processed_headlines.db`), reducing unnecessary re-processing. 
 
 - **Batch headline identification**  
-Scraped headlines are combined into numbered batches before a lightweight LLM is instructed to return only the indicies of potential risk headlines, decreasing the number of LLM calls needed for risk categorisation.
+Scraped headlines are combined into numbered batches before a lightweight LLM is instructed to return only the indicies of potential risk headlines, decreasing the number of LLM calls needed for categorisation.
 
 - **Two-stage LLM summarisation**  
-Scraped story text is summarised by a lightweight LLM in batches before an advanced LLM is directed to produce a final executive summary using the expert judgement of a head analyst, minimizing irrelevant details. 
+Scraped story text is summarised by a lightweight LLM in batches before an advanced LLM is told to produce a final executive summary using the expert judgement of a head analyst, minimizing irrelevant details. 
 
 
 ## 📃 License

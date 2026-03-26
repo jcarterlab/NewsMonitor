@@ -28,12 +28,12 @@ def initialise_database(config):
     cursor = connection.cursor()
 
     cursor.execute('''
-    CREATE TABLE IF NOT EXISTS headlines (
-        headline TEXT,
-        link TEXT UNIQUE,
-        story_tag TEXT,
-        story_class TEXT
-    )
+        CREATE TABLE IF NOT EXISTS headlines (
+            headline TEXT,
+            link TEXT UNIQUE,
+            story_tag TEXT,
+            story_class TEXT
+        )
     ''')
 
     return connection, cursor
@@ -56,7 +56,9 @@ def get_existing_links(cursor):
         set:
             Set of existing headline links.
     """
-    cursor.execute("SELECT link FROM headlines")
+    cursor.execute('''
+        SELECT link FROM headlines
+    ''')
     return {row[0] for row in cursor}
 
 
@@ -89,7 +91,7 @@ def insert_headlines(new_headlines_df, cursor):
     Insert headline rows into the database.
 
     Args:
-        headlines_df (pandas.DataFrame):
+        new_headlines_df (pandas.DataFrame):
             DataFrame containing headline data.
         cursor (sqlite3.Cursor):
             Active SQLite cursor.
@@ -98,10 +100,10 @@ def insert_headlines(new_headlines_df, cursor):
         ['headline', 'link', 'story_tag', 'story_class']
     ].itertuples(index=False, name=None)
 
-    cursor.executemany(
-        '''
-        INSERT OR IGNORE INTO headlines
-        (headline, link, story_tag, story_class)
+    cursor.executemany('''
+        INSERT OR IGNORE INTO headlines (
+            headline, link, story_tag, story_class
+        )
         VALUES (?, ?, ?, ?)
         ''',
         rows
