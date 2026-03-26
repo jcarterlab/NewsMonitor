@@ -1,6 +1,6 @@
 # 📰 Targeted News Monitoring Pipeline
 
-A Python pipeline using web scraping and LLM-based risk categorisation and summarisation. 
+A Python news analysis pipeline that uses web scraping and LLMs for scalable threat detection. 
 
 The system allows analysts to detect emerging risks such as supply chain disruptions, regulatory changes and geopolitical events more efficiently. It is particularly useful in regions with many non-English sources because LLMs are excellent at simultaneously translating and summarizing raw news content. Risk detection can be customised based on the entity of concern (e.g. a logistics firm), risk type (e.g. transport disruption events) and confidence rate (e.g. 95%). 
 

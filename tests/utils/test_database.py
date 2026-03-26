@@ -4,7 +4,8 @@ import pandas as pd
 from utils.database import (
     initialise_database, 
     get_existing_links,
-    filter_new_headlines
+    filter_new_headlines,
+    insert_headlines
 )
 
 
@@ -169,3 +170,100 @@ class TestFilterNewHeadlines:
         result.loc[0, 'headline'] = 'Changed'
 
         assert df.loc[0, 'headline'] == 'A'
+
+
+class TestInsertHeadlines:
+    def test_inserts_single_row(self, db_config):
+        connection, cursor = initialise_database(db_config)
+        df = pd.DataFrame({
+            'headline': ['A'],
+            'link': ['link1'],
+            'story_tag': ['p'],
+            'story_class': ['text']
+        })
+        insert_headlines(df, cursor)
+        connection.commit()
+        rows = cursor.execute('SELECT * FROM headlines').fetchall()
+
+        assert rows == [('A', 'link1', 'p', 'text')]
+
+        connection.close()
+
+    def test_inserts_multiple_rows(self, db_config):
+        connection, cursor = initialise_database(db_config)
+        df = pd.DataFrame({
+            'headline': ['A', 'B'],
+            'link': ['link1', 'link2'],
+            'story_tag': ['p', 'p'],
+            'story_class': ['text', 'paragraph']
+        })
+        insert_headlines(df, cursor)
+        connection.commit()
+        rows = cursor.execute('SELECT * FROM headlines').fetchall()
+
+        assert rows == [
+            ('A', 'link1', 'p', 'text'),
+            ('B', 'link2', 'p', 'paragraph')
+        ]
+
+        connection.close()
+
+    def test_drops_duplicate_links(self, db_config):
+        connection, cursor = initialise_database(db_config)
+        df = pd.DataFrame({
+            'headline': ['A', 'A'],
+            'link': ['link1', 'link1'],
+            'story_tag': ['p', 'p'],
+            'story_class': ['paragraph', 'paragraph']
+        })
+        insert_headlines(df, cursor)
+        connection.commit()
+        rows = cursor.execute('SELECT * FROM headlines').fetchall()
+
+        assert rows == [('A', 'link1', 'p', 'paragraph')]
+
+        connection.close()
+
+    def test_empty_dataframe_inserts_nothing(self, db_config):
+        connection, cursor = initialise_database(db_config)
+        df = pd.DataFrame(columns=[
+            'headline', 'link', 'story_tag', 'story_class'
+        ])
+        insert_headlines(df, cursor)
+        connection.commit()
+        rows = cursor.execute('SELECT * FROM headlines').fetchall()
+
+        assert rows == []
+
+        connection.close()
+
+    def test_ignores_extra_dataframe_columns(self, db_config):
+        connection, cursor = initialise_database(db_config)
+        df = pd.DataFrame({
+            'headline': ['A'],
+            'link': ['link1'],
+            'story_tag': ['p'],
+            'story_class': ['text'],
+            'extra_column': ['to be ignored']
+        })
+        insert_headlines(df, cursor)
+        connection.commit()
+        rows = cursor.execute('SELECT * FROM headlines').fetchall()
+
+        assert rows == [('A', 'link1', 'p', 'text')]
+
+        connection.close()
+
+
+    def test_raises_keyerror_if_required_column_missing(self, db_config):
+        connection, cursor = initialise_database(db_config)
+        df = pd.DataFrame({
+            'headline': ['A'],
+            'link': ['link1'],
+            'story_tag': ['p']
+        })
+        
+        with pytest.raises(KeyError):
+            insert_headlines(df, cursor)
+
+        connection.close()
