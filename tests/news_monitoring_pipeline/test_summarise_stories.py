@@ -1,6 +1,6 @@
 import pytest
 from types import SimpleNamespace
-from news_monitoring_pipeline.summarise_stories import batch_story_texts
+from newsmonitor.summarise_stories import batch_story_texts
 
 
 # ----------------------------------------------------------------------

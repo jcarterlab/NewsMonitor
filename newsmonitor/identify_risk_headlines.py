@@ -7,7 +7,7 @@ those that may represent risks to a specified entity and risk category.
 
 import time
 import re
-from news_monitoring_pipeline.build_prompts import headline_identification_prompt 
+from newsmonitor.build_prompts import headline_identification_prompt 
 
 
 # ----------------------------------------------------------------------

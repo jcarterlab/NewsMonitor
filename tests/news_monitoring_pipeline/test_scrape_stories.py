@@ -1,6 +1,6 @@
 import pytest
 from bs4 import BeautifulSoup
-from news_monitoring_pipeline.scrape_stories import extract_story_text
+from newsmonitor.scrape_stories import extract_story_text
 
 
 @pytest.fixture

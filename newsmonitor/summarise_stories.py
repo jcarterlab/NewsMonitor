@@ -6,7 +6,7 @@ summary using a two-stage LLM summarisation process.
 """
 
 import time
-from news_monitoring_pipeline.build_prompts import story_text_summarization_prompt, executive_summary_prompt
+from newsmonitor.build_prompts import story_text_summarization_prompt, executive_summary_prompt
 
 
 # ----------------------------------------------------------------------

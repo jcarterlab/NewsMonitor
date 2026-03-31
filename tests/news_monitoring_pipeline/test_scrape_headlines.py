@@ -1,6 +1,6 @@
 import pytest
 from bs4 import BeautifulSoup
-from news_monitoring_pipeline.scrape_headlines import extract_text, extract_link
+from newsmonitor.scrape_headlines import extract_text, extract_link
 
 
 # ----------------------------------------------------------------------

@@ -1,13 +1,13 @@
 from datetime import datetime, timezone
 from google import genai
 import config
-from news_monitoring_pipeline.scrape_headlines import scrape_headlines
-from news_monitoring_pipeline.deduplicate_headlines import deduplicate_headlines
-from news_monitoring_pipeline.identify_risk_headlines import identify_risk_headlines
-from news_monitoring_pipeline.scrape_stories import scrape_stories
-from news_monitoring_pipeline.summarise_stories import summarise_stories
-from news_monitoring_pipeline.store_headlines import store_headlines
-from news_monitoring_pipeline.email_summary import email_summary
+from newsmonitor.scrape_headlines import scrape_headlines
+from newsmonitor.deduplicate_headlines import deduplicate_headlines
+from newsmonitor.identify_risk_headlines import identify_risk_headlines
+from newsmonitor.scrape_stories import scrape_stories
+from newsmonitor.summarise_stories import summarise_stories
+from newsmonitor.store_headlines import store_headlines
+from newsmonitor.email_summary import email_summary
 
 
 # ----------------------------------------------------------------------

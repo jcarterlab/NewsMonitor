@@ -1,7 +1,7 @@
 import pytest
 from types import SimpleNamespace
 import pandas as pd
-from news_monitoring_pipeline.identify_risk_headlines import (
+from newsmonitor.identify_risk_headlines import (
     number_headlines, 
     batch_headlines,
     extract_index_numbers

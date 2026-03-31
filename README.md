@@ -1,4 +1,4 @@
-# 📰 Targeted News Monitoring Pipeline
+# 📰 NewsMonitor
 
 A Python news analysis pipeline that uses web scraping and LLMs for scalable risk detection. 
 
