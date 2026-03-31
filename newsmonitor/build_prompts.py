@@ -29,7 +29,7 @@ def headline_identification_prompt(batch, config):
     risk_type = config.RISK_TYPE
     risk_confidence_threshold = config.RISK_CONFIDENCE_THRESHOLD
 
-    return f"""
+    return f'''
     You are a skilled analyst. 
     I'm going to give you multiple article sources separated by index numbers (1., 32., 146. etc). 
     I want you to return the indices of headlines which pose a potential risk to {entity_of_concern} in terms of {risk_type}. 
@@ -43,7 +43,7 @@ def headline_identification_prompt(batch, config):
     <HEADLINES>
     {batch}
     </HEADLINES>
-    """
+    '''
 
 
 
@@ -70,7 +70,7 @@ def story_text_summarization_prompt(today_date, story_text, config):
     entity_of_concern = config.ENTITY_OF_CONCERN
     risk_type = config.RISK_TYPE
 
-    return f"""
+    return f'''
     You are a highly experienced analyst. 
     I'm going to give you raw text scraped from one or more web pages on {today_date}.
     I want you to analyze the text and summarize events which pose a potential risk to {entity_of_concern} in terms of {risk_type}. 
@@ -82,7 +82,8 @@ def story_text_summarization_prompt(today_date, story_text, config):
     Aim for moderately sized paragraphs, roughly 80-120 words where appropriate.
     Start the summary with a title followed by the first subheading on a new line. 
     Choose 3-5 appropriate subheadings where the content supports it to structure the summary.
-    Make the title a Heading level 2 (##) and the subheadings a Heading level 3 (###).
+    Make the title a Heading level 2 (##) followed by {today_date}. 
+    Make the subheadings a Heading level 3 (###).
     Split the text within each subheading into multiple paragraphs where necessary for better readability. 
     Group related information together within subheadings. 
     If there are not many relevant developments, include fewer subheadings and make it clear that there's not much relevant news.  
@@ -95,7 +96,7 @@ def story_text_summarization_prompt(today_date, story_text, config):
     <RAW WEB TEXT>
     {story_text}
     </RAW WEB TEXT>
-    """
+    '''
 
 
 def executive_summary_prompt(today_date, combined_summaries, config):
@@ -117,7 +118,7 @@ def executive_summary_prompt(today_date, combined_summaries, config):
     entity_of_concern = config.ENTITY_OF_CONCERN
     risk_type = config.RISK_TYPE
 
-    return f"""
+    return f'''
     You are a highly experienced lead analyst. 
     I'm going to give multiple summaries from your team based on news from {today_date}. 
     I want you to produce an executive summary of events which pose a potential risk to {entity_of_concern} in terms of {risk_type}. 
@@ -129,7 +130,8 @@ def executive_summary_prompt(today_date, combined_summaries, config):
     Aim for moderately sized paragraphs, roughly 50-90 words where appropriate.
     Start the summary with a title followed by the first subheading on a new line. 
     Choose 2-4 appropriate subheadings where the content supports it to structure the summary.
-    Make the title a Heading level 2 (##) and the subheadings a Heading level 3 (###).
+    Make the title a Heading level 2 (##) followed by {today_date}. 
+    Make the subheadings a Heading level 3 (###).
     Split the text within each subheading into multiple paragraphs where necessary for better readability. 
     Group related information together within subheadings. 
     If there are not many relevant developments, include fewer subheadings and make it clear that there's not much relevant news. 
@@ -143,4 +145,4 @@ def executive_summary_prompt(today_date, combined_summaries, config):
     <COMBINED SUMMARY TEXT>
     {combined_summaries}
     </COMBINED SUMMARY TEXT>
-    """
+    '''

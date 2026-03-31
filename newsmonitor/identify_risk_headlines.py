@@ -19,7 +19,7 @@ def number_headlines(new_headlines_df):
     Convert a DataFrame of headlines into numbered headline strings.
 
     Args:
-        headlines_df (pd.DataFrame):
+        new_headlines_df (pd.DataFrame):
             DataFrame containing a 'headline' column with scraped headlines.
 
     Returns:
@@ -189,7 +189,7 @@ def identify_risk_headlines(client, new_headlines_df, config):
     Args:
         client (object):
             Gemini client instance. 
-        headlines_df (pd.DataFrame):
+        new_headlines_df (pd.DataFrame):
             DataFrame containing a 'headline' column with scraped headlines.
         config (module):
             Configuration module containing 'LLM_RETRY_ATTEMPTS', 'LLM_WAIT_TIME', 

@@ -1,10 +1,11 @@
 import pytest
 import sqlite3
 import pandas as pd
-from utils.database import (
+from utils.database_helpers import (
     initialise_database, 
     get_existing_links,
     filter_new_headlines,
+    insert_summary,
     insert_headlines
 )
 
@@ -16,7 +17,8 @@ from utils.database import (
 @pytest.fixture
 def db_config(tmp_path):
     class DummyConfig:
-        DB_PATH = str(tmp_path / 'test_processed_headlines.db')
+        DB_PATH = str(tmp_path / 'test_news_data.db')
+        RISK_TYPE = 'risk A'
     return DummyConfig
 
 
@@ -49,7 +51,9 @@ class TestInitialiseDatabase:
         columns = cursor.fetchall()
         column_names = [col[1] for col in columns]
 
-        assert column_names == ['headline', 'link', 'story_tag', 'story_class']
+        assert column_names == [
+            'id', 'headline', 'link', 'story_tag', 'story_class', 'summary_id'
+            ]
 
         connection.close()
 
@@ -175,61 +179,65 @@ class TestFilterNewHeadlines:
 class TestInsertHeadlines:
     def test_inserts_single_row(self, db_config):
         connection, cursor = initialise_database(db_config)
+        insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame({
             'headline': ['A'],
             'link': ['link1'],
             'story_tag': ['p'],
             'story_class': ['text']
         })
-        insert_headlines(df, cursor)
+        insert_headlines(df, 1, cursor)
         connection.commit()
         rows = cursor.execute('SELECT * FROM headlines').fetchall()
 
-        assert rows == [('A', 'link1', 'p', 'text')]
+        assert rows == [(1, 'A', 'link1', 'p', 'text', 1)]
 
         connection.close()
 
     def test_inserts_multiple_rows(self, db_config):
         connection, cursor = initialise_database(db_config)
+        insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame({
             'headline': ['A', 'B'],
             'link': ['link1', 'link2'],
             'story_tag': ['p', 'p'],
             'story_class': ['text', 'paragraph']
         })
-        insert_headlines(df, cursor)
+        insert_headlines(df, 1, cursor)
         connection.commit()
         rows = cursor.execute('SELECT * FROM headlines').fetchall()
 
         assert rows == [
-            ('A', 'link1', 'p', 'text'),
-            ('B', 'link2', 'p', 'paragraph')
+            (1, 'A', 'link1', 'p', 'text', 1),
+            (2, 'B', 'link2', 'p', 'paragraph', 1)
         ]
 
         connection.close()
 
     def test_drops_duplicate_links(self, db_config):
         connection, cursor = initialise_database(db_config)
+        insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame({
             'headline': ['A', 'A'],
             'link': ['link1', 'link1'],
             'story_tag': ['p', 'p'],
             'story_class': ['paragraph', 'paragraph']
         })
-        insert_headlines(df, cursor)
+        insert_headlines(df, 1, cursor)
         connection.commit()
         rows = cursor.execute('SELECT * FROM headlines').fetchall()
 
-        assert rows == [('A', 'link1', 'p', 'paragraph')]
+        assert rows == [(1, 'A', 'link1', 'p', 'paragraph', 1)]
 
         connection.close()
 
     def test_empty_dataframe_inserts_nothing(self, db_config):
         connection, cursor = initialise_database(db_config)
+        insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame(columns=[
             'headline', 'link', 'story_tag', 'story_class'
         ])
-        insert_headlines(df, cursor)
+        insert_headlines(df, 1, cursor)
         connection.commit()
         rows = cursor.execute('SELECT * FROM headlines').fetchall()
 
@@ -239,6 +247,7 @@ class TestInsertHeadlines:
 
     def test_ignores_extra_dataframe_columns(self, db_config):
         connection, cursor = initialise_database(db_config)
+        insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame({
             'headline': ['A'],
             'link': ['link1'],
@@ -246,17 +255,18 @@ class TestInsertHeadlines:
             'story_class': ['text'],
             'extra_column': ['to be ignored']
         })
-        insert_headlines(df, cursor)
+        insert_headlines(df, 1, cursor)
         connection.commit()
         rows = cursor.execute('SELECT * FROM headlines').fetchall()
 
-        assert rows == [('A', 'link1', 'p', 'text')]
+        assert rows == [(1, 'A', 'link1', 'p', 'text', 1)]
 
         connection.close()
 
 
     def test_raises_keyerror_if_required_column_missing(self, db_config):
         connection, cursor = initialise_database(db_config)
+        insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame({
             'headline': ['A'],
             'link': ['link1'],
@@ -264,6 +274,6 @@ class TestInsertHeadlines:
         })
         
         with pytest.raises(KeyError):
-            insert_headlines(df, cursor)
+            insert_headlines(df, 1, cursor)
 
         connection.close()

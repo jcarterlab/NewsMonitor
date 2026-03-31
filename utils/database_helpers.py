@@ -2,7 +2,8 @@
 Database storage module.
 
 This module manages the SQLite database used to store scraped headlines,
-retrieve existing links, filter duplicates and insert new headline data.
+store generated summaries, retrieve existing links, filter duplicates,
+and insert processed pipeline data.
 """
 
 import sqlite3
@@ -14,7 +15,7 @@ import sqlite3
 
 def initialise_database(config):
     """
-    Create the headlines table if it does not already exist.
+    Create required database tables if they do not already exist.
 
     Args:
         config (module):
@@ -27,12 +28,26 @@ def initialise_database(config):
     connection = sqlite3.connect(config.DB_PATH)
     cursor = connection.cursor()
 
+    cursor.execute("PRAGMA foreign_keys = ON")
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS summaries (
+            id INTEGER PRIMARY KEY,
+            summary_text TEXT,
+            date_generated TEXT,
+            risk_type TEXT
+        )
+    ''')
+
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS headlines (
+            id INTEGER PRIMARY KEY,
             headline TEXT,
             link TEXT UNIQUE,
             story_tag TEXT,
-            story_class TEXT
+            story_class TEXT,
+            summary_id INTEGER,
+            FOREIGN KEY (summary_id) REFERENCES summaries(id)
         )
     ''')
 
@@ -86,25 +101,60 @@ def filter_new_headlines(headlines_df, existing_links):
 # STORAGE FUNCTIONS
 # ----------------------------------------------------------------------
 
-def insert_headlines(new_headlines_df, cursor):
+def insert_summary(summary_text, today_date, cursor, config):
+    """
+    Insert a generated summary into the database.
+
+    Args:
+        summary_text (str):
+            Final summary text.
+        today_date (str):
+            Date the summary was generated.
+        cursor (sqlite3.Cursor):
+            Active SQLite cursor.
+        config (module):
+            Configuration module containing 'RISK_TYPE'.
+
+    Returns:
+        int:
+            ID of the inserted summary.
+    """
+    cursor.execute('''
+        INSERT INTO summaries (
+            summary_text, date_generated, risk_type
+        )
+        VALUES (?, ?, ?)
+    ''',
+        (summary_text, today_date, config.RISK_TYPE)
+    )
+
+    return cursor.lastrowid
+
+
+def insert_headlines(new_headlines_df, summary_id, cursor):
     """
     Insert headline rows into the database.
 
     Args:
         new_headlines_df (pandas.DataFrame):
-            DataFrame containing headline data.
+            DataFrame containing processed headline data.
+        summary_id (int):
+            ID of the summary associated with the headlines.
         cursor (sqlite3.Cursor):
             Active SQLite cursor.
     """
+    new_headlines_df = new_headlines_df.copy()
+    new_headlines_df['summary_id'] = summary_id
+
     rows = new_headlines_df[
-        ['headline', 'link', 'story_tag', 'story_class']
+        ['headline', 'link', 'story_tag', 'story_class', 'summary_id']
     ].itertuples(index=False, name=None)
 
     cursor.executemany('''
         INSERT OR IGNORE INTO headlines (
-            headline, link, story_tag, story_class
+            headline, link, story_tag, story_class, summary_id
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
         ''',
         rows
     )

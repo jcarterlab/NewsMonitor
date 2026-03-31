@@ -5,7 +5,7 @@ This module orchestrates the deduplication of risk headlines by keeping
 only those whose links are not already stored in the database.
 """
 
-from utils.database import (
+from utils.database_helpers import (
     initialise_database, 
     get_existing_links, 
     filter_new_headlines
@@ -13,7 +13,7 @@ from utils.database import (
 
 
 # ----------------------------------------------------------------------
-# ORCHESTRATION FUNCTIONS 
+# DEDUPLICATION FUNCTIONS 
 # ----------------------------------------------------------------------
 
 def deduplicate_headlines(headlines_df, config):

@@ -6,7 +6,7 @@ from newsmonitor.deduplicate_headlines import deduplicate_headlines
 from newsmonitor.identify_risk_headlines import identify_risk_headlines
 from newsmonitor.scrape_stories import scrape_stories
 from newsmonitor.summarise_stories import summarise_stories
-from newsmonitor.store_headlines import store_headlines
+from newsmonitor.store_data import store_data
 from newsmonitor.email_summary import email_summary
 
 
@@ -43,7 +43,7 @@ def run_pipeline(client, today_date, config):
 
     if final_summary and len(final_summary.split()) >= config.MIN_SUMMARY_WORDS:
         # Data storage (if summary generation is successful)
-        store_headlines(new_headlines_df, config)
+        store_data(final_summary, new_headlines_df, today_date, config)
 
         # Email the summary (if EMAIL_ENABLED = True)
         if config.EMAIL_ENABLED:

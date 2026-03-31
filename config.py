@@ -27,10 +27,10 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 BASE_DIR = Path(__file__).resolve().parent
 LINKS_PATH = BASE_DIR / os.getenv('LINKS_FILE', 'links.csv')
 
-# path to processed_headlines.db
+# path to news_data.db
 DATA_DIR = BASE_DIR / 'data'
 DATA_DIR.mkdir(exist_ok=True)
-DB_PATH = DATA_DIR / 'processed_headlines.db'
+DB_PATH = DATA_DIR / 'news_data.db'
 
 # path to emails.csv
 EMAILS_PATH = BASE_DIR / os.getenv('EMAILS_FILE', 'emails.csv')

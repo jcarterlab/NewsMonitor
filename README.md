@@ -1,6 +1,6 @@
 # 📰 NewsMonitor
 
-A Python news analysis pipeline that uses web scraping and LLMs for scalable risk detection. 
+A Python pipeline for monitoring news sources and using LLMs to detect emerging risks at scale.
 
 The system allows analysts to detect emerging risks such as supply chain disruptions, regulatory changes and geopolitical events more efficiently. It is particularly useful in regions with many non-English sources because LLMs are excellent at simultaneously translating and summarizing raw news content. Risk detection can be customised based on the entity of concern (e.g. a logistics firm), risk type (e.g. transport disruption events) and confidence rate (e.g. 95%). 
 
@@ -11,15 +11,15 @@ The system allows analysts to detect emerging risks such as supply chain disrupt
 
 The pipeline performs the following steps:
 
-1. Scrapes headlines from multiple news sources
+1. Scrapes headlines from multiple news listing pages
 2. Deduplicates headlines against an SQLite database
 3. Uses an LLM to identify risk-relevant headlines
-4. Scrapes full article texts for flagged stories
+4. Scrapes full article texts for the flagged stories
 5. Uses a two-stage LLM summarisation process to generate a final summary
-6. Saves processed headlines to the database
+6. Saves the processed summary and headlines to an SQLite database
 7. Optionally sends an email alert to the end user(s)
 
-## 🧠 Design Decisions
+## 📐 Design Decisions
 
 - **Headline deduplication**  
 Avoids reprocessing by storing previously seen links in SQLite, reducing unnecessary scraping and LLM usage.
@@ -90,15 +90,24 @@ summarise_stories
      │ '''
      │
      ▼
-store_headlines
+store_data
      │
-     │ Example output (SQLite table):
-     │ ┌───────────────────────────────────┬─────────────────────────────────────────────┐
-     │ │ headline                          │ link                                        │
-     │ ├───────────────────────────────────┼─────────────────────────────────────────────┤
-     │ │ Paro portuario en Buenaventura... │ www.eltiempo.com/nacion/alertan-que-paro... │         
-     │ │ ...                               │ ...                                         │ 
-     │ └───────────────────────────────────┴─────────────────────────────────────────────┘
+     │ Example output (SQLite tables):
+     │
+     │ summaries
+     │ ┌────┬───────────────────────────────────────┬────────────────┬──────────────────────┐
+     │ │ id │ summary_text                          │ date_generated │ risk_type            │
+     │ ├────┼───────────────────────────────────────┼────────────────┼──────────────────────┤
+     │ │ 1  │ ## Summary of Potential Transport...  │ 2026-03-31     │ transport disruption │
+     │ └────┴───────────────────────────────────────┴────────────────┴──────────────────────┘
+     │
+     │ headlines
+     │ ┌────┬───────────────────────────────────┬──────────────────────────────┬────────────┐
+     │ │ id │ headline                          │ link                         │ summary_id │
+     │ ├────┼───────────────────────────────────┼──────────────────────────────┼────────────┤
+     │ │ 1  │ Paro portuario en Buenaventura... │ www.eltiempo.com/nacion/...  │ 1          │
+     │ │ 2  │ Aumentan las exportaciones de...  │ www.portafolio.co/economia/  │ 1          │
+     │ └────┴───────────────────────────────────┴──────────────────────────────┴────────────┘
      │
      ▼
 email_summaries (optional)
@@ -121,8 +130,8 @@ the end user
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/jcarterlab/Targeted-News-Monitoring-Pipeline.git
-cd Targeted-News-Monitoring-Pipeline
+git clone https://github.com/jcarterlab/NewsMonitor.git
+cd NewsMonitor
 
 # 2. Create a virtual environment
 python -m venv .venv
@@ -151,7 +160,7 @@ The pipeline will run using the example news sources provided in `links.csv` and
 
 The pipeline supports four levels of customisation:
 
-### 1. News sources
+### 1. News sources (recommended)
 
 Edit `links.csv` to provide the news listing URLs and the CSS selectors used to extract headlines and article content. Each row represents a news source the pipeline will monitor.
 
@@ -166,7 +175,7 @@ Example:
 └───────────┴───────────────────────────┴───────────────────┴─────┴───────────┴─────────────┘
 ```
 
-### 2. Risk detection parameters
+### 2. Risk detection parameters (recommended)
 
 Edit `.env` to define:
 
@@ -208,7 +217,7 @@ ADVANCED_MODEL=gemini-2.5-pro
 LLM_STORY_WORDS_BATCH_SIZE=12000
 ```
 
-### 4. Email (optional)
+### 4. Email alerts (optional)
 
 To set up email alerts, you must do the following: 
 
@@ -270,7 +279,7 @@ NewsMonitor/
 │
 ├── utils/
 │   ├── __init__.py
-│   └── database.py
+│   └── database_helpers.py
 │
 ├── newsmonitor/
 │   ├── __init__.py
@@ -280,7 +289,7 @@ NewsMonitor/
 │   ├── identify_risk_headlines.py
 │   ├── scrape_stories.py
 │   ├── summarise_stories.py
-│   ├── store_headlines.py
+│   ├── store_data.py
 │   └── email_summaries.py
 │
 └── tests/
@@ -296,4 +305,4 @@ NewsMonitor/
 
 ## 📃 License
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE](https://github.com/jcarterlab/Targeted-News-Monitoring-Pipeline/blob/main/LICENSE) file for details.
+This project is licensed under the Apache 2.0 License - see the [LICENSE](https://github.com/jcarterlab/NewsMonitor/blob/main/LICENSE) file for details.
