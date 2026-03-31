@@ -112,11 +112,12 @@ the end user
 ## 🗂️ Project Structure
 
 ```text
-targeted-news-monitoring-pipeline/
+NewsMonitor/
 │
 ├── main.py
 ├── config.py
 ├── links.csv
+├── emails.example.csv
 ├── .env.example
 ├── requirements.txt
 ├── pytest.ini
@@ -128,7 +129,7 @@ targeted-news-monitoring-pipeline/
 │   ├── __init__.py
 │   └── database.py
 │
-├── news_monitoring_pipeline/
+├── newsmonitor/
 │   ├── __init__.py
 │   ├── build_prompts.py
 │   ├── scrape_headlines.py
@@ -143,7 +144,7 @@ targeted-news-monitoring-pipeline/
     ├── utils/
     │   └── test_database.py
     │
-    └── news_monitoring_pipeline/
+    └── newsmonitor/
         ├── test_scrape_headlines.py
         ├── test_identify_risk_headlines.py
         ├── test_scrape_stories.py
@@ -246,7 +247,7 @@ LLM_STORY_WORDS_BATCH_SIZE=12000
 
 To set up email alerts, you must do the following: 
 
-#### 1) Enter your Resend API key in the .env file created from the example.
+#### 1) Enter your Resend API key in the .env file.
 
 Example:
 
@@ -254,17 +255,17 @@ Example:
 RESEND_API_KEY=your_api_key_here
 ```
 
-#### 2) Edit `emails.csv` to provide the email(s) you want the summaries to be sent to. 
+#### 2) Create an `emails.csv` file from the `emails.example.csv` template and enter your email. 
 
 Example:
 
 ```
-┌───────────────────┬────────┬──────────────┐
-│ email             │ name   │ is_active    │
-├───────────────────┼────────┼──────────────┤
-│ example@gmail.com │ Jack   │ true         │
-│ ...               │ ...    │ ...          │
-└───────────────────┴────────┴──────────────┘
+┌────────────────────────┬─────────────┬──────────────┐
+│ email                  │ name        │ is_active    │
+├────────────────────────┼─────────────┼──────────────┤
+│ your_email@example.com │ your_name   │ true         │
+│ ...                    │ ...         │ ...          │
+└────────────────────────┴─────────────┴──────────────┘
 ```
 
 **Note:** Without a verified domain in Resend, emails can only be sent to your own email address. To send summaries to multiple recipients, you must register and verify a custom domain.
@@ -272,7 +273,7 @@ Example:
 #### 3) Edit `.env` to define:
 
 - **Email enabled** (e.g. true if you want emails to be sent)
-- **From email** (e.g. example@gmail.com)
+- **From email** (e.g. your_email@example.com)
 - **Retry attempts** for failed emails before moving on (e.g. 3 attempts)
 - **Email wait time** between email attempts (e.g. 2 seconds)
 

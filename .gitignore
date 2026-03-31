@@ -211,3 +211,6 @@ headlines.csv
 
 # SQLite database
 *.db
+
+# CSV containing email addresses
+emails.csv
