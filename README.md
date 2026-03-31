@@ -1,6 +1,6 @@
 # 📰 Targeted News Monitoring Pipeline
 
-A Python news analysis pipeline that uses web scraping and LLMs for scalable threat detection. 
+A Python news analysis pipeline that uses web scraping and LLMs for scalable risk detection. 
 
 The system allows analysts to detect emerging risks such as supply chain disruptions, regulatory changes and geopolitical events more efficiently. It is particularly useful in regions with many non-English sources because LLMs are excellent at simultaneously translating and summarizing raw news content. Risk detection can be customised based on the entity of concern (e.g. a logistics firm), risk type (e.g. transport disruption events) and confidence rate (e.g. 95%). 
 
@@ -31,26 +31,26 @@ scrape_headlines
      │
      │ Example output (Spanish headlines):
      │ [
-     │   "Sindicato ferroviario anuncia protestas nacionales",
-     │   "Paro portuario en Buenaventura amenaza exportaciones",
-     │   "Aumentan las exportaciones de café pese a retrasos logísticos",
+     │   'Sindicato ferroviario anuncia protestas nacionales',
+     │   'Paro portuario en Buenaventura amenaza exportaciones',
+     │   'Aumentan las exportaciones de café pese a retrasos logísticos',
      │   ...
      │ ]
      │
      ▼
 deduplicate_headlines
      │
-     │ Example output (Spanish headlines):
+     │ Example output (deduplicated Spanish headlines):
      │ [
-     │   "Paro portuario en Buenaventura amenaza exportaciones",
-     │   "Aumentan las exportaciones de café pese a retrasos logísticos",
+     │   'Paro portuario en Buenaventura amenaza exportaciones',
+     │   'Aumentan las exportaciones de café pese a retrasos logísticos',
      │   ...
      │ ]
      │
      ▼
 identify_risk_headlines
      │
-     │ Example output (headline indices):
+     │ Example output (risk headline indices):
      │ [
      │   0, 
      │   7, 
@@ -60,22 +60,52 @@ identify_risk_headlines
      ▼
 scrape_stories
      │
-     │ Example output (Spanish story text):
+     │ Example output (Spanish news story text):
      │ [
-     │   "Trabajadores portuarios en Buenaventura iniciaron un paro...",
-     │   "Autoridades reportan retrasos en la cadena logística tras bloqueo...",
+     │   'Trabajadores portuarios en Buenaventura iniciaron un paro...',
+     │   'Autoridades reportan retrasos en la cadena logística tras bloqueo...',
      │   ...
      │ ]
      │
      ▼
 summarise_stories
      │
-     │ Example output (English summary):
-     │ "Labour disputes in Colombia's port and rail sectors may disrupt
-     │ freight movement and export logistics in the coming days. Also..."
+     │ Example output (English summary in Markdown):
+     │ '''
+     │   ## Summary of Potential Transport Disruption Risks
+     │
+     │   ### Ongoing Labour Disputes
+     │
+     │   Labour disputes in Colombia's port and rail sectors may disrupt
+     │   freight movement and export logistics in the coming days. Also...
+     │ '''
      │
      ▼
 store_headlines
+     │
+     │ Example output (SQLite table):
+     │ ┌───────────────────────────────────┬─────────────────────────────────────────────┐
+     │ │ headline                          │ link                                        │
+     │ ├───────────────────────────────────┼─────────────────────────────────────────────┤
+     │ │ Paro portuario en Buenaventura... │ www.eltiempo.com/nacion/alertan-que-paro... │         
+     │ │ ...                               │ ...                                         │ 
+     │ └───────────────────────────────────┴─────────────────────────────────────────────┘
+     │
+     ▼
+email_summaries (optional)
+     │
+     │ Example output (English summary in HTML):
+     │ '''
+     │   SUMMARY OF POTENTIAL TRANSPORT DISRUPTION RISKS
+     │
+     │   ── Ongoing Labour Disputes ──
+     │
+     │   Labour disputes in Colombia's port and rail sectors may disrupt
+     │   freight movement and export logistics in the coming days. Also...
+     │ '''
+     │
+     ▼
+the end user
 ```
 
 
@@ -106,7 +136,8 @@ targeted-news-monitoring-pipeline/
 │   ├── identify_risk_headlines.py
 │   ├── scrape_stories.py
 │   ├── summarise_stories.py
-│   └── store_headlines.py
+│   ├── store_headlines.py
+│   └── email_summaries.py
 │
 └── tests/
     ├── utils/
@@ -152,7 +183,7 @@ The pipeline will run using the example news sources provided in `links.csv` and
 
 ## ⚙️ Custom Configuration
 
-The pipeline supports three levels of customisation:
+The pipeline supports four levels of customisation:
 
 ### 1. News sources
 
@@ -185,11 +216,11 @@ RISK_TYPE=transport disruption events
 RISK_CONFIDENCE_THRESHOLD=95
 ```
 
-### 3. Optional pipeline parameters
+### 3. Pipeline parameters (optional)
 
 Edit `.env` to define:
 
-- **Request timeout** for scraping (e.g. 10 seconds)
+- **Request timeout** for web scraping (e.g. 10 seconds)
 - **Minimum headline length** for filtering non-headlines (e.g. 25 characters)
 - **Headline batch size** for LLM classification (e.g. 40 headlines)
 - **Retry attempts** for failed LLM API calls before moving on (e.g. 3 attempts)
@@ -211,6 +242,49 @@ ADVANCED_MODEL=gemini-2.5-pro
 LLM_STORY_WORDS_BATCH_SIZE=12000
 ```
 
+### 4. Email (optional)
+
+To set up email alerts, you must do the following: 
+
+#### 1) Enter your Resend API key in the .env file created from the example.
+
+Example:
+
+```env
+RESEND_API_KEY=your_api_key_here
+```
+
+#### 2) Edit `emails.csv` to provide the email(s) you want the summaries to be sent to. 
+
+Example:
+
+```
+┌───────────────────┬────────┬──────────────┐
+│ email             │ name   │ is_active    │
+├───────────────────┼────────┼──────────────┤
+│ example@gmail.com │ Jack   │ true         │
+│ ...               │ ...    │ ...          │
+└───────────────────┴────────┴──────────────┘
+```
+
+**Note:** Without a verified domain in Resend, emails can only be sent to your own email address. To send summaries to multiple recipients, you must register and verify a custom domain.
+
+#### 3) Edit `.env` to define:
+
+- **Email enabled** (e.g. true if you want emails to be sent)
+- **From email** (e.g. example@gmail.com)
+- **Retry attempts** for failed emails before moving on (e.g. 3 attempts)
+- **Email wait time** between email attempts (e.g. 2 seconds)
+
+Example:
+
+```env
+EMAIL_ENABLED=true
+FROM_EMAIL=example@gmail.com
+EMAIL_RETRY_ATTEMPTS=3
+EMAIL_WAIT_TIME=2
+```
+**Note:** If you do not have a verified domain, you can leave `FROM_EMAIL` blank. Emails will then be sent using Resend’s default sender (`onboarding@resend.dev`), but only to your own email address.
 
 ## 📐 Architectural Advantages
 

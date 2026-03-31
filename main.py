@@ -47,7 +47,7 @@ def run_pipeline(client, today_date, config):
 
         # Email the summary (if EMAIL_ENABLED = True)
         if config.EMAIL_ENABLED:
-            email_summary(final_summary, config)
+            email_summary(final_summary, today_date, config)
 
     return final_summary
 

@@ -215,7 +215,7 @@ def scrape_headlines(config):
     if links_df.empty:
         raise RuntimeError(f'{links_path} is empty')
     
-    required_cols = {"page_url", "tag", "base_url", "story_tag", "story_class"}
+    required_cols = {'page_url', 'tag', 'base_url', 'story_tag', 'story_class'}
     missing_cols = required_cols - set(links_df.columns)
     if missing_cols:
         raise RuntimeError(f'{links_path} missing required columns: {sorted(missing_cols)}')

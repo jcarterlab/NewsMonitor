@@ -32,6 +32,9 @@ DATA_DIR = BASE_DIR / 'data'
 DATA_DIR.mkdir(exist_ok=True)
 DB_PATH = DATA_DIR / 'processed_headlines.db'
 
+# path to emails.csv
+EMAILS_PATH = BASE_DIR / os.getenv('EMAILS_FILE', 'emails.csv')
+
 
 # --------------------------------------------------
 # Risk detection parameters
@@ -68,8 +71,11 @@ MIN_SUMMARY_WORDS = int(os.getenv('MIN_SUMMARY_WORDS', 50)) # words
 # Email parameters
 # --------------------------------------------------
 
-# Email settings
-EMAIL_ENABLED = os.getenv('EMAIL_ENABLED', 'false').lower() in ('true', '1', 'yes') # boolean
-
 # API keys
 RESEND_API_KEY = os.getenv('RESEND_API_KEY')
+
+# Email settings
+EMAIL_ENABLED = os.getenv('EMAIL_ENABLED', 'false').lower() in ('true', '1', 'yes') # boolean
+FROM_EMAIL = os.getenv('FROM_EMAIL') or 'onboarding@resend.dev'
+EMAIL_RETRY_ATTEMPTS = int(os.getenv('EMAIL_RETRY_ATTEMPTS', 3)) # retries
+EMAIL_WAIT_TIME = int(os.getenv('EMAIL_WAIT_TIME', 2)) # second
