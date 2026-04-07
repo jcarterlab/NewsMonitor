@@ -214,3 +214,7 @@ headlines.csv
 
 # CSV containing email addresses
 emails.csv
+
+# CSV containing links
+links.csv
+

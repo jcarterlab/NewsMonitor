@@ -1,8 +1,8 @@
 # 📰 NewsMonitor
 
-A Python pipeline for monitoring news sources and using LLMs to detect emerging risks at scale.
+A Python pipeline that uses web scraping and LLMs for largescale news monitoring. 
 
-The system allows analysts to detect emerging risks such as supply chain disruptions, regulatory changes and geopolitical events more efficiently. It is particularly useful in regions with many non-English sources because LLMs are excellent at simultaneously translating and summarizing raw news content. Risk detection can be customised based on the entity of concern (e.g. a logistics firm), risk type (e.g. transport disruption events) and confidence rate (e.g. 95%). 
+The system allows analysts to detect emerging risks such as supply chain disruptions, regulatory changes and geopolitical events more efficiently. It is particularly useful in regions with many non-English sources because LLMs are excellent at simultaneously translating and summarizing raw news content. News monitoring can be customised based on the topic of concern (e.g. transport disruption events), entity of concern (e.g. a logistics firm operating in Colombia) and confidence threshold (e.g. the LLM must be 95% sure the story is relevant). 
 
 **Key technologies:** Python, BeautifulSoup, SQLite, Pandas, Google Gemini API, Resend.
 
@@ -175,20 +175,20 @@ Example:
 └───────────┴───────────────────────────┴───────────────────┴─────┴───────────┴─────────────┘
 ```
 
-### 2. Risk detection parameters (recommended)
+### 2. Monitoring parameters (recommended)
 
 Edit `.env` to define:
 
+- **Topic of concern** (e.g. transport disruption events)
 - **Entity of concern** (e.g. a logistics firm operating in Colombia)
-- **Risk type** (e.g. transport disruption events)
 - **Confidence threshold** for LLM classification (e.g. 95%)
 
 Example:
 
 ```env
-ENTITY_OF_CONCERN=a logistics firm
-RISK_TYPE=transport disruption events
-RISK_CONFIDENCE_THRESHOLD=95
+TOPIC_OF_CONCERN=transport disruption events
+ENTITY_OF_CONCERN=a logistics firm operating in Colombia
+IDENTIFICATION_CONFIDENCE_THRESHOLD=95
 ```
 
 ### 3. Pipeline parameters (optional)

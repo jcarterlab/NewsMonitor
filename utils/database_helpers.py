@@ -34,8 +34,8 @@ def initialise_database(config):
         CREATE TABLE IF NOT EXISTS summaries (
             id INTEGER PRIMARY KEY,
             summary_text TEXT,
-            date_generated TEXT,
-            risk_type TEXT
+            date_generated TEXT,  
+            topic TEXT
         )
     ''')
 
@@ -113,7 +113,7 @@ def insert_summary(summary_text, today_date, cursor, config):
         cursor (sqlite3.Cursor):
             Active SQLite cursor.
         config (module):
-            Configuration module containing 'RISK_TYPE'.
+            Configuration module containing 'TOPIC_OF_CONCERN'.
 
     Returns:
         int:
@@ -121,11 +121,11 @@ def insert_summary(summary_text, today_date, cursor, config):
     """
     cursor.execute('''
         INSERT INTO summaries (
-            summary_text, date_generated, risk_type
+            summary_text, date_generated, topic
         )
         VALUES (?, ?, ?)
     ''',
-        (summary_text, today_date, config.RISK_TYPE)
+        (summary_text, today_date, config.TOPIC_OF_CONCERN)
     )
 
     return cursor.lastrowid

@@ -30,19 +30,19 @@ LINKS_PATH = BASE_DIR / os.getenv('LINKS_FILE', 'links.csv')
 # path to news_data.db
 DATA_DIR = BASE_DIR / 'data'
 DATA_DIR.mkdir(exist_ok=True)
-DB_PATH = DATA_DIR / 'news_data.db'
+DB_PATH = DATA_DIR / 'news.db'
 
 # path to emails.csv
 EMAILS_PATH = BASE_DIR / os.getenv('EMAILS_FILE', 'emails.csv')
 
 
 # --------------------------------------------------
-# Risk detection parameters
+# Monitoring parameters
 # --------------------------------------------------
 
-ENTITY_OF_CONCERN = os.getenv('ENTITY_OF_CONCERN', 'a logistics firm') # type of organisation
-RISK_TYPE = os.getenv('RISK_TYPE', 'transport disruption events') # type of risk
-RISK_CONFIDENCE_THRESHOLD = int(os.getenv('RISK_CONFIDENCE_THRESHOLD', 95)) # percentage (0–100)
+TOPIC_OF_CONCERN = os.getenv('TOPIC_OF_CONCERN', 'transport disruption events') # topic to monitor
+ENTITY_OF_CONCERN = os.getenv('ENTITY_OF_CONCERN', 'a logistics firm operating in Colombia') # type of organisation monitoring
+IDENTIFICATION_CONFIDENCE_THRESHOLD = int(os.getenv('IDENTIFICATION_CONFIDENCE_THRESHOLD', 95)) # percentage (0–100)
 
 # --------------------------------------------------
 # Pipeline parameters

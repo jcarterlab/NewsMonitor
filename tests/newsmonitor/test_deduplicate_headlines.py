@@ -16,7 +16,7 @@ from utils.database_helpers import (
 def db_config(tmp_path):
     class DummyConfig:
         DB_PATH = str(tmp_path / 'test_news_data.db')
-        RISK_TYPE = 'risk A'
+        TOPIC_OF_CONCERN = 'risk A'
     return DummyConfig
 
 

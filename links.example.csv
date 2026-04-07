@@ -1,0 +1,8 @@
+website,page_url,base_url,tag,story_tag,story_class
+El Tiempo,https://www.eltiempo.com/colombia,https://www.eltiempo.com/,a,div,paragraph
+El Espectador,https://www.elespectador.com/politica/?utm_source=interno&utm_medium=boton&utm_campaign=menu_horizontal&utm_content=boton_menu_horizontal,https://www.elespectador.com/,a,p,font--secondary
+El Colombiano,https://www.elcolombiano.com/colombia,https://www.elcolombiano.com/,a,div,paragraph
+El Heraldo,https://www.elheraldo.co/nacional,https://www.elheraldo.co/,a,p,article-body__paragraph
+La Silla Vacia,https://www.lasillavacia.com/silla-nacional/santanderes/,https://www.lasillavacia.com/,a,div,entry-content
+Semana,https://www.semana.com/nacion/,https://www.semana.com/,a,p,text-base
+Caracol,https://caracol.com.co/actualidad/politica/,https://caracol.com.co/,a,div,cnt-txt

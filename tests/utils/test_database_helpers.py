@@ -18,7 +18,7 @@ from utils.database_helpers import (
 def db_config(tmp_path):
     class DummyConfig:
         DB_PATH = str(tmp_path / 'test_news_data.db')
-        RISK_TYPE = 'risk A'
+        TOPIC_OF_CONCERN = 'risk A'
     return DummyConfig
 
 
@@ -180,7 +180,7 @@ class TestInsertSummary:
     def test_inserts_summary(self, db_config):
         connection, cursor = initialise_database(db_config)
         insert_summary('summary_text', 'today_date', cursor, db_config)
-        row = cursor.execute('SELECT summary_text, date_generated, risk_type FROM summaries').fetchone()
+        row = cursor.execute('SELECT summary_text, date_generated, topic FROM summaries').fetchone()
 
         assert row == ('summary_text', 'today_date', 'risk A')
 
@@ -208,10 +208,10 @@ class TestInsertSummary:
         connection, cursor = initialise_database(db_config)
 
         class DummyConfig:
-            RISK_TYPE = 'risk B'
+            TOPIC_OF_CONCERN = 'risk B'
 
         insert_summary('summary_text', 'today_date', cursor, DummyConfig)
-        risk_type = cursor.execute('SELECT risk_type FROM summaries').fetchone()[0]
+        risk_type = cursor.execute('SELECT topic FROM summaries').fetchone()[0]
 
         assert risk_type == 'risk B'
 

@@ -93,7 +93,7 @@ def summarise_story_text_batches(client, story_text_batches, today_date, config)
             Date string used to contextualize the summary generation.
         config (module):
             Configuration module containing 'LLM_RETRY_ATTEMPTS', 'LLM_WAIT_TIME', 'BASIC_MODEL', 
-            'ENTITY_OF_CONCERN' and 'RISK_TYPE'.
+            'ENTITY_OF_CONCERN' and 'TOPIC_OF_CONCERN'.
 
     Returns:
         list[str] | None:
@@ -233,7 +233,7 @@ def summarise_stories(client, story_texts, today_date, config):
             Date string used to contextualize summary generation.
         config (module):
             Configuration module containing 'LLM_RETRY_ATTEMPTS', 'LLM_WAIT_TIME', 'BASIC_MODEL', 
-            'ADVANCED_MODEL', 'ENTITY_OF_CONCERN' and 'RISK_TYPE'.
+            'ADVANCED_MODEL', 'ENTITY_OF_CONCERN' and 'TOPIC_OF_CONCERN'.
 
     Returns:
         str:
