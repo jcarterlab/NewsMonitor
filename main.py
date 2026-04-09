@@ -16,7 +16,7 @@ from newsmonitor.email_summary import email_summary
 # LOGGING CONFIGURATION
 # ----------------------------------------------------------------------
 
-setup_logging(logging.INFO, config)
+setup_logging(logging.INFO, logging.DEBUG, config)
 logger = logging.getLogger(__name__)
 run_id = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
 

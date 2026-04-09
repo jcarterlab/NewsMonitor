@@ -71,9 +71,10 @@ def initialise_database(config):
         return connection, cursor
     
     except Exception:
-        logger.exception(
-            "Failed to initialise database path=%s",
-            config.DB_PATH
+        logger.error(
+            'Failed to initialise database path=%s',
+            config.DB_PATH,
+            exc_info=True
         )
         raise
 
@@ -95,10 +96,23 @@ def get_existing_links(cursor):
         set:
             Set of existing headline links.
     """
-    cursor.execute('''
-        SELECT link FROM headlines
-    ''')
-    return {row[0] for row in cursor}
+    logger.debug('Fetching existing links from database')
+
+    try:
+        cursor.execute('SELECT link FROM headlines')
+        links = {row[0] for row in cursor}    
+    except Exception: 
+        logger.error(
+            'Failed to fetch existing links from headlines table', 
+            exc_info=True
+        )
+        raise
+
+    logger.debug(
+        'Retrieved existing links count=%d', 
+        len(links)
+    )
+    return links
 
 
 def filter_new_headlines(headlines_df, existing_links):
@@ -115,9 +129,31 @@ def filter_new_headlines(headlines_df, existing_links):
         pandas.DataFrame:
             DataFrame containing only new headlines.
     """
-    headlines_df = headlines_df.drop_duplicates(subset='link')
+    logger.debug(
+        'Filtering new headlines initial_count=%d existing_links=%d',
+        len(headlines_df),
+        len(existing_links)
+    )
 
-    return headlines_df[~headlines_df['link'].isin(existing_links)].copy()
+    try: 
+        deduplicated_df = headlines_df.drop_duplicates(subset='link')
+        new_headlines_df = deduplicated_df[~deduplicated_df['link'].isin(existing_links)].copy()
+
+    except Exception:
+        logger.error(
+            'Failed to filter new headlines',
+            exc_info=True
+        )
+        raise
+
+    logger.debug(
+        'Filtered new headlines new_count=%d removed_duplicates=%d removed_existing=%d',
+        len(new_headlines_df),
+        len(headlines_df) - len(deduplicated_df),
+        len(deduplicated_df) - len(new_headlines_df)
+    )
+
+    return new_headlines_df
 
 
 
@@ -143,16 +179,44 @@ def insert_summary(summary_text, today_date, cursor, config):
         int:
             ID of the inserted summary.
     """
-    cursor.execute('''
-        INSERT INTO summaries (
-            summary_text, date_generated, topic
-        )
-        VALUES (?, ?, ?)
-    ''',
-        (summary_text, today_date, config.TOPIC_OF_CONCERN)
+    topic = config.TOPIC_OF_CONCERN
+
+    logger.debug(
+        'Inserting summary date=%s topic=%s word_count=%d',
+        today_date,
+        topic,
+        len(summary_text.split())
     )
 
-    return cursor.lastrowid
+    try:
+        cursor.execute('''
+            INSERT INTO summaries (
+                summary_text, date_generated, topic
+            )
+            VALUES (?, ?, ?)
+        ''',
+            (summary_text, today_date, topic)
+        )
+
+        summary_id = cursor.lastrowid
+
+    except Exception:
+        logger.error(
+            'Failed to insert summary date=%s topic=%s',
+            today_date,
+            topic,
+            exc_info=True
+        )
+        raise
+
+    logger.info(
+        'Inserted summary summary_id=%d date=%s topic=%s',
+        summary_id,
+        today_date,
+        topic
+    )
+
+    return summary_id
 
 
 def insert_headlines(new_headlines_df, summary_id, cursor):
@@ -167,18 +231,48 @@ def insert_headlines(new_headlines_df, summary_id, cursor):
         cursor (sqlite3.Cursor):
             Active SQLite cursor.
     """
-    new_headlines_df = new_headlines_df.copy()
-    new_headlines_df['summary_id'] = summary_id
-
-    rows = new_headlines_df[
-        ['website', 'headline', 'link', 'story_tag', 'story_class', 'summary_id']
-    ].itertuples(index=False, name=None)
-
-    cursor.executemany('''
-        INSERT OR IGNORE INTO headlines (
-            website, headline, link, story_tag, story_class, summary_id
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-        ''',
-        rows
+    logger.debug(
+        'Inserting headlines summary_id=%d input_count=%d',
+        summary_id,
+        len(new_headlines_df)
     )
+
+    try:
+        df = new_headlines_df.copy()
+        df['summary_id'] = summary_id
+
+        rows = df[
+            ['website', 'headline', 'link', 'story_tag', 'story_class', 'summary_id']
+        ].itertuples(index=False, name=None)
+
+        cursor.executemany('''
+            INSERT OR IGNORE INTO headlines (
+                website, headline, link, story_tag, story_class, summary_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            ''',
+            rows
+        )
+
+        inserted_count = cursor.rowcount
+
+    except Exception:
+        logger.error(
+            'Failed to insert headlines summary_id=%d',
+            summary_id,
+            exc_info=True
+        )
+        raise
+
+    logger.info(
+        'Inserted headlines summary_id=%d inserted_count=%d attempted=%d ignored=%d',
+        summary_id,
+        inserted_count,
+        len(new_headlines_df),
+        len(new_headlines_df) - inserted_count
+    )
+
+
+
+
+    

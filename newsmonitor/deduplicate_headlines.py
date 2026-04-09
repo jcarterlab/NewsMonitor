@@ -39,14 +39,39 @@ def deduplicate_headlines(headlines_df, config):
         pandas.DataFrame:
             DataFrame containing only new headlines.
     """
-    connection, cursor = initialise_database(config)
+    logger.info(
+        'Starting headline deduplication input_count=%d db_path=%s',
+        len(headlines_df),
+        config.DB_PATH
+    )
 
-    existing_links = get_existing_links(cursor)
-    new_headlines_df = filter_new_headlines(headlines_df, existing_links)
+    connection = None
 
-    connection.commit()
-    connection.close()
+    try: 
+        connection, cursor = initialise_database(config)
 
-    logger.info('Deduplicated headlines count=%d', len(new_headlines_df))
+        existing_links = get_existing_links(cursor)
+        new_headlines_df = filter_new_headlines(headlines_df, existing_links)
 
+        connection.commit()
+
+    except Exception:
+        logger.error(
+            'Headline deduplication failed input_count=%d db_path=%s',
+            len(headlines_df),
+            config.DB_PATH,
+            exc_info=True
+        )
+        raise
+
+    finally:
+        if connection is not None:
+            connection.close()
+
+    logger.info(
+        'Completed headline deduplication input_count=%d new_count=%d removed_count=%d',
+        len(headlines_df),
+        len(new_headlines_df),
+        len(headlines_df) - len(new_headlines_df)
+    )
     return new_headlines_df
