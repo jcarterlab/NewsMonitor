@@ -266,7 +266,9 @@ NewsMonitor/
 ├── pytest.ini
 │
 ├── data/
-│   └── .gitkeep
+│   ├── .gitkeep
+│   └── logs/
+│       └── .gitkeep
 │
 ├── utils/
 │   ├── __init__.py

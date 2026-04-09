@@ -6,7 +6,16 @@ store generated summaries, retrieve existing links, filter duplicates,
 and insert processed pipeline data.
 """
 
+import logging
 import sqlite3
+
+
+# ----------------------------------------------------------------------
+# LOGGING SETUP
+# ----------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+
 
 
 # ----------------------------------------------------------------------
@@ -25,33 +34,48 @@ def initialise_database(config):
         tuple:
             SQLite connection and cursor.
     """
-    connection = sqlite3.connect(config.DB_PATH)
-    cursor = connection.cursor()
+    try:
+        logger.info('Initialising database path=%s', config.DB_PATH)
 
-    cursor.execute("PRAGMA foreign_keys = ON")
+        connection = sqlite3.connect(config.DB_PATH)
+        cursor = connection.cursor()
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS summaries (
-            id INTEGER PRIMARY KEY,
-            summary_text TEXT,
-            date_generated TEXT,  
-            topic TEXT
+        cursor.execute("PRAGMA foreign_keys = ON")
+
+        logger.debug('Ensuring "summaries" table exists')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS summaries (
+                id INTEGER PRIMARY KEY,
+                summary_text TEXT,
+                date_generated TEXT,  
+                topic TEXT
+            )
+        ''')
+
+        logger.debug('Ensuring "headlines" table exists')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS headlines (
+                id INTEGER PRIMARY KEY,
+                website TEXT,
+                headline TEXT,
+                link TEXT UNIQUE,
+                story_tag TEXT,
+                story_class TEXT,
+                summary_id INTEGER,
+                FOREIGN KEY (summary_id) REFERENCES summaries(id)
+            )
+        ''')
+
+        logger.info('Database initialised successfully path=%s', config.DB_PATH)
+
+        return connection, cursor
+    
+    except Exception:
+        logger.exception(
+            "Failed to initialise database path=%s",
+            config.DB_PATH
         )
-    ''')
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS headlines (
-            id INTEGER PRIMARY KEY,
-            headline TEXT,
-            link TEXT UNIQUE,
-            story_tag TEXT,
-            story_class TEXT,
-            summary_id INTEGER,
-            FOREIGN KEY (summary_id) REFERENCES summaries(id)
-        )
-    ''')
-
-    return connection, cursor
+        raise
 
 
 
@@ -147,14 +171,14 @@ def insert_headlines(new_headlines_df, summary_id, cursor):
     new_headlines_df['summary_id'] = summary_id
 
     rows = new_headlines_df[
-        ['headline', 'link', 'story_tag', 'story_class', 'summary_id']
+        ['website', 'headline', 'link', 'story_tag', 'story_class', 'summary_id']
     ].itertuples(index=False, name=None)
 
     cursor.executemany('''
         INSERT OR IGNORE INTO headlines (
-            headline, link, story_tag, story_class, summary_id
+            website, headline, link, story_tag, story_class, summary_id
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
         ''',
         rows
     )

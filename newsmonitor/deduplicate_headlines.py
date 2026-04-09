@@ -6,9 +6,6 @@ only those whose links are not already stored in the database.
 """
 
 import logging
-import config
-from logging_config import setup_logging
-from datetime import datetime, timezone
 from utils.database_helpers import (
     initialise_database, 
     get_existing_links, 

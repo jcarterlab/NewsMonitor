@@ -6,9 +6,6 @@ them into the database once processing has been completed.
 """
 
 import logging
-import config
-from logging_config import setup_logging
-from datetime import datetime, timezone
 from utils.database_helpers import (
     initialise_database, 
     insert_summary, 

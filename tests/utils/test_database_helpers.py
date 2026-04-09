@@ -52,7 +52,7 @@ class TestInitialiseDatabase:
         column_names = [col[1] for col in columns]
 
         assert column_names == [
-            'id', 'headline', 'link', 'story_tag', 'story_class', 'summary_id'
+            'id', 'website', 'headline', 'link', 'story_tag', 'story_class', 'summary_id'
             ]
 
         connection.close()
@@ -235,6 +235,7 @@ class TestInsertHeadlines:
         connection, cursor = initialise_database(db_config)
         insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame({
+            'website': ['website_1'],
             'headline': ['A'],
             'link': ['link1'],
             'story_tag': ['p'],
@@ -244,7 +245,7 @@ class TestInsertHeadlines:
         connection.commit()
         rows = cursor.execute('SELECT * FROM headlines').fetchall()
 
-        assert rows == [(1, 'A', 'link1', 'p', 'text', 1)]
+        assert rows == [(1, 'website_1', 'A', 'link1', 'p', 'text', 1)]
 
         connection.close()
 
@@ -252,6 +253,7 @@ class TestInsertHeadlines:
         connection, cursor = initialise_database(db_config)
         insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame({
+            'website': ['website_1', 'website_2'],
             'headline': ['A', 'B'],
             'link': ['link1', 'link2'],
             'story_tag': ['p', 'p'],
@@ -262,8 +264,8 @@ class TestInsertHeadlines:
         rows = cursor.execute('SELECT * FROM headlines').fetchall()
 
         assert rows == [
-            (1, 'A', 'link1', 'p', 'text', 1),
-            (2, 'B', 'link2', 'p', 'paragraph', 1)
+            (1, 'website_1', 'A', 'link1', 'p', 'text', 1),
+            (2, 'website_2', 'B', 'link2', 'p', 'paragraph', 1)
         ]
 
         connection.close()
@@ -272,6 +274,7 @@ class TestInsertHeadlines:
         connection, cursor = initialise_database(db_config)
         insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame({
+            'website': ['website_1', 'website_1'],
             'headline': ['A', 'A'],
             'link': ['link1', 'link1'],
             'story_tag': ['p', 'p'],
@@ -281,7 +284,7 @@ class TestInsertHeadlines:
         connection.commit()
         rows = cursor.execute('SELECT * FROM headlines').fetchall()
 
-        assert rows == [(1, 'A', 'link1', 'p', 'paragraph', 1)]
+        assert rows == [(1, 'website_1', 'A', 'link1', 'p', 'paragraph', 1)]
 
         connection.close()
 
@@ -289,7 +292,7 @@ class TestInsertHeadlines:
         connection, cursor = initialise_database(db_config)
         insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame(columns=[
-            'headline', 'link', 'story_tag', 'story_class'
+            'website', 'headline', 'link', 'story_tag', 'story_class'
         ])
         insert_headlines(df, 1, cursor)
         connection.commit()
@@ -303,6 +306,7 @@ class TestInsertHeadlines:
         connection, cursor = initialise_database(db_config)
         insert_summary('summary_text', 'today_date', cursor, db_config)
         df = pd.DataFrame({
+            'website': ['website_1'],
             'headline': ['A'],
             'link': ['link1'],
             'story_tag': ['p'],
@@ -313,7 +317,7 @@ class TestInsertHeadlines:
         connection.commit()
         rows = cursor.execute('SELECT * FROM headlines').fetchall()
 
-        assert rows == [(1, 'A', 'link1', 'p', 'text', 1)]
+        assert rows == [(1, 'website_1', 'A', 'link1', 'p', 'text', 1)]
 
         connection.close()
 

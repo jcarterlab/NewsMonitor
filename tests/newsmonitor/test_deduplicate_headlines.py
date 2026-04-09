@@ -32,6 +32,7 @@ class TestDeduplicateHeadlines:
         summary_id = insert_summary('summary_text', 'today_date', cursor, db_config)
 
         old_headlines_df = pd.DataFrame({
+            'website': ['website_1'],
             'headline': ['headline_1'],
             'link': ['link_1'],
             'story_tag': ['story_tag_1'],
@@ -45,6 +46,7 @@ class TestDeduplicateHeadlines:
         connection.close()
 
         headlines_df = pd.DataFrame({
+            'website': ['website_1', 'website_2'],
             'headline': ['headline_1', 'headline_2'],
             'link': ['link_1', 'link_2'],
             'story_tag': ['story_tag_1', 'story_tag_2'],
@@ -58,6 +60,7 @@ class TestDeduplicateHeadlines:
 
     def test_returns_all_headlines_when_database_is_empty(self, db_config):
         headlines_df = pd.DataFrame({
+            'website': ['website_1', 'website_2'],
             'headline': ['headline_1', 'headline_2'],
             'link': ['link_1', 'link_2'],
             'story_tag': ['story_tag_1', 'story_tag_2'],
@@ -70,6 +73,7 @@ class TestDeduplicateHeadlines:
 
     def test_removes_duplicate_links_within_input_dataframe(self, db_config):
         headlines_df = pd.DataFrame({
+            'website': ['website_1', 'website_1', 'website_2'],
             'headline': ['headline_1', 'headline_1', 'headline_2'],
             'link': ['link_1', 'link_1', 'link_2'],
             'story_tag': ['story_tag_1', 'story_tag_1', 'story_tag_2'],

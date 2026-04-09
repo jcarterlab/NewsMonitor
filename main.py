@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
-from google import genai
 import logging
 import config
 from logging_config import setup_logging
+from google import genai
 from newsmonitor.scrape_headlines import scrape_headlines
 from newsmonitor.deduplicate_headlines import deduplicate_headlines
 from newsmonitor.identify_risk_headlines import identify_risk_headlines
@@ -16,7 +16,7 @@ from newsmonitor.email_summary import email_summary
 # LOGGING CONFIGURATION
 # ----------------------------------------------------------------------
 
-setup_logging(config.LOG_DIR, logging.INFO)
+setup_logging(logging.INFO, config)
 logger = logging.getLogger(__name__)
 run_id = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
 

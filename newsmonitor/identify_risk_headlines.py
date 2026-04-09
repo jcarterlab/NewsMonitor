@@ -6,9 +6,6 @@ those that may represent risks to a specified entity and risk category.
 """
 
 import logging
-import config
-from logging_config import setup_logging
-from datetime import datetime, timezone
 import time
 import re
 from newsmonitor.build_prompts import headline_identification_prompt 

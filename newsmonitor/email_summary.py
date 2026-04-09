@@ -8,9 +8,6 @@ reliable delivery using the Resend API.
 
 
 import logging
-import config
-from logging_config import setup_logging
-from datetime import datetime, timezone
 import resend
 import pandas as pd
 import time
@@ -41,7 +38,7 @@ def send_email(final_summary, recipient, today_date, config):
         today_date (str):
             Date string for the subject line.
         config (module):
-            Configuration module containing email settings.
+            Configuration module containing various email settings.
 
     Returns:
         dict:

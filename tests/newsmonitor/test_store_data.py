@@ -28,6 +28,7 @@ def db_config(tmp_path):
 class TestStoreData:
     def test_stores_summary(self, db_config):
         new_headlines_df = pd.DataFrame({
+            'website': ['website'],
             'headline': ['headline_1'],
             'link': ['link_1'],
             'story_tag': ['story_tag_1'],
@@ -45,6 +46,7 @@ class TestStoreData:
 
     def test_stores_headlines(self, db_config):
         new_headlines_df = pd.DataFrame({
+            'website': ['website_1', 'website_2'],
             'headline': ['headline_1', 'headline_2'],
             'link': ['link_1', 'link_2'],
             'story_tag': ['story_tag_1', 'story_tag_2'],
@@ -66,6 +68,7 @@ class TestStoreData:
 
     def test_links_headlines_to_inserted_summary(self, db_config):
         new_headlines_df = pd.DataFrame({
+            'website': ['website_1'],
             'headline': ['headline_1'],
             'link': ['link_1'],
             'story_tag': ['tag_1'],

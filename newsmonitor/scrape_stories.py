@@ -6,9 +6,6 @@ URLs that have been identified as representing a potential risk.
 """
 
 import logging
-import config
-from logging_config import setup_logging
-from datetime import datetime, timezone
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -39,13 +36,15 @@ JUNK_PHRASES_RE = re.compile(
 # HELPER FUNCTIONS
 # ----------------------------------------------------------------------
 
-def extract_story_text(elements, story_url):
+def extract_story_text(elements, website, story_url):
     """
     Extract text from BeautifulSoup Tag objects representing a news story.
 
     Args:
         elements (list[bs4.element.Tag]):
             List of BeautifulSoup Tag objects from which text should be extracted.
+    website (str): 
+            Website name of the news site.
         story_url (str):
             URL of the news story.
 
@@ -92,11 +91,13 @@ def extract_story_text(elements, story_url):
 # SCRAPING FUNCTIONS
 # ----------------------------------------------------------------------
 
-def scrape_story_elements(story_url, story_tag, story_class, config):
+def scrape_story_elements(website, story_url, story_tag, story_class, config):
     """
     Fetch all matching HTML elements from a news story page.
 
     Args:
+        website (str): 
+            Website name of the news site.
         story_url (str):
             URL of the news story.
         story_tag (str):
@@ -159,16 +160,23 @@ def scrape_stories(risk_headlines_df, config):
     total_words = 0
 
     for row in risk_headlines_df.itertuples():
+        website = row.website
         story_url = row.link
         story_tag = row.story_tag
         story_class = row.story_class
 
-        elements = scrape_story_elements(story_url, story_tag, story_class, config)
+        elements = scrape_story_elements(
+            website, 
+            story_url, 
+            story_tag, 
+            story_class, 
+            config
+        )
 
         if not elements:
             continue
 
-        story_text = extract_story_text(elements, story_url)
+        story_text = extract_story_text(elements, website, story_url)
         if not story_text:
             continue
 

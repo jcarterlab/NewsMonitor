@@ -6,9 +6,6 @@ summary using a two-stage LLM summarisation process.
 """
 
 import logging
-import config
-from logging_config import setup_logging
-from datetime import datetime, timezone
 import time
 from newsmonitor.build_prompts import story_text_summarization_prompt, executive_summary_prompt
 
