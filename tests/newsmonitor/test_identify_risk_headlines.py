@@ -57,39 +57,39 @@ class TestExtractIndexNumbers:
     def test_extracts_zero_based_indices_from_list(self):
         indices, status = extract_index_numbers(SimpleNamespace(text='[1, 3, 5]'), 6)
         assert indices == [0, 2, 4]
-        assert status == 'ok'
+        assert status == True
 
     def test_extracts_list_when_extra_text_surrounds_it(self):
         indices, status = extract_index_numbers(SimpleNamespace(text='These [1, 2, 4] match.'), 5)
         assert indices == [0, 1, 3]
-        assert status == 'ok'
+        assert status == True
 
     def test_filters_out_of_range_indices(self):
         indices, status = extract_index_numbers(SimpleNamespace(text='[1, 3, 9]'), 4)
         assert indices == [0, 2]
-        assert status == 'ok'
+        assert status == True
 
     def test_returns_empty_response_when_response_is_none(self):
         indices, status = extract_index_numbers(None, 5)
         assert indices == []
-        assert status == 'empty_response'
+        assert status == False
 
     def test_returns_empty_response_when_text_attribute_is_missing(self):
         indices, status = extract_index_numbers(SimpleNamespace(), 5)
         assert indices == []
-        assert status == 'empty_response'
+        assert status == False
 
     def test_returns_empty_response_when_text_is_empty(self):
         indices, status = extract_index_numbers(SimpleNamespace(text=''), 5)
         assert indices == []
-        assert status == 'empty_response'
+        assert status == False
 
     def test_returns_no_list_when_no_python_list_found(self):
         indices, status = extract_index_numbers(SimpleNamespace(text='Headlines 1, 2 and 3'), 5)
         assert indices == []
-        assert status == 'no_list'
+        assert status == False
 
     def test_returns_ok_with_empty_indices_when_list_is_empty(self):
         indices, status = extract_index_numbers(SimpleNamespace(text='[]'), 5)
         assert indices == []
-        assert status == 'ok'
+        assert status == True

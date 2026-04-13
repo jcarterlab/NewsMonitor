@@ -84,19 +84,21 @@ store_data
      │ Example output (SQLite tables):
      │
      │ summaries
-     │ ┌────┬───────────────────────────────────────┬────────────────┬──────────────────────┐
-     │ │ id │ summary_text                          │ date_generated │ risk_type            │
-     │ ├────┼───────────────────────────────────────┼────────────────┼──────────────────────┤
-     │ │ 1  │ ## Summary of Potential Transport...  │ 2026-03-31     │ transport disruption │
-     │ └────┴───────────────────────────────────────┴────────────────┴──────────────────────┘
+     │ ┌─────┬───────────────────────────────────────┬────────────────┬──────────────────────┐
+     │ │ id  │ summary_text                          │ date_generated │ risk_type            │
+     │ ├─────┼───────────────────────────────────────┼────────────────┼──────────────────────┤
+     │ │ 1   │ ## Summary of Potential Transport...  │ 2026-03-31     │ transport disruption │
+     │ │ ... │ ...                                   │ ...            │ ...                  │
+     │ └─────┴───────────────────────────────────────┴────────────────┴──────────────────────┘
      │
      │ headlines
-     │ ┌────┬───────────────────────────────────┬──────────────────────────────┬────────────┐
-     │ │ id │ headline                          │ link                         │ summary_id │
-     │ ├────┼───────────────────────────────────┼──────────────────────────────┼────────────┤
-     │ │ 1  │ Paro portuario en Buenaventura... │ www.eltiempo.com/nacion/...  │ 1          │
-     │ │ 2  │ Aumentan las exportaciones de...  │ www.portafolio.co/economia/  │ 1          │
-     │ └────┴───────────────────────────────────┴──────────────────────────────┴────────────┘
+     │ ┌─────┬───────────────────────────────────┬──────────────────────────────┬────────────┐
+     │ │ id  │ headline                          │ link                         │ summary_id │
+     │ ├─────┼───────────────────────────────────┼──────────────────────────────┼────────────┤
+     │ │ 1   │ Paro portuario en Buenaventura... │ www.eltiempo.com/nacion/     │ 1          │
+     │ │ 2   │ Aumentan las exportaciones de...  │ www.portafolio.co/economia/  │ 1          │
+     │ │ ... │ ...                               │ ...                          │ ...        │
+     │ └─────┴───────────────────────────────────┴──────────────────────────────┴────────────┘
      │
      ▼
 email_summary (optional)
@@ -207,6 +209,8 @@ BASIC_MODEL=gemini-2.5-flash
 ADVANCED_MODEL=gemini-2.5-pro
 LLM_STORY_WORDS_BATCH_SIZE=12000
 ```
+
+**Note:** Some news websites restrict automated requests. If scraping fails, update the `REQUEST_HEADER` (e.g. `User-Agent`) to mimic a standard browser.
 
 ### 4. Email alerts (optional)
 

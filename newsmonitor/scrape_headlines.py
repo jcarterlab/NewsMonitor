@@ -239,6 +239,12 @@ def scrape_headlines(config):
             Combined headlines with columns including headline, link, story_tag and story_class. 
     """
     links_path = config.LINKS_PATH
+
+    logger.info(
+        'Starting headline scraping links_path=%s',
+        links_path
+    )
+
     try:
         links_df = pd.read_csv(links_path, encoding='utf-8')
     except FileNotFoundError:

@@ -35,12 +35,24 @@ def number_headlines(new_headlines_df):
         list[str]:
             A list of headline strings each prefixed with an index number.
     """
+    logger.debug(
+        'Numbering headlines count=%d',
+        len(new_headlines_df)
+    )
+
     headlines = new_headlines_df['headline'].fillna('')
 
-    return [
+    numbered_headlines = [
         f'{i}. {headline or ""}'
         for i, headline in enumerate(headlines, start=1)
     ]
+
+    logger.debug(
+        'Numbered headlines generated count=%d',
+        len(numbered_headlines)
+    )
+
+    return numbered_headlines
 
 
 def batch_headlines(numbered_headlines, config):
@@ -60,7 +72,14 @@ def batch_headlines(numbered_headlines, config):
     batch_size = config.LLM_HEADLINE_BATCH_SIZE
 
     if not numbered_headlines:
+        logger.debug('No headlines to batch')
         return []
+    
+    logger.debug(
+        'Batching headlines count=%d batch_size=%d',
+        len(numbered_headlines),
+        batch_size
+    )
 
     batches = []
 
@@ -68,6 +87,11 @@ def batch_headlines(numbered_headlines, config):
         batches.append(
             '\n'.join(numbered_headlines[start:start + batch_size])
         )
+
+    logger.debug(
+        'Created headline batches count=%d',
+        len(batches)
+    )
 
     return batches
 
@@ -87,21 +111,24 @@ def extract_index_numbers(response, max_len):
             list[int]:
                 List of zero-based indices extracted from the Gemini response or an empty list.
             str:
-                Parsing status (e.g. 'ok', 'empty_response', 'no_list', 'parse_error').
+                Parsing status (e.g. True or False).
     """
     if response is None:
-        print('Error: Gemini response is None')
-        return [], 'empty_response'
+        logger.error('Gemini response is None')
+        return [], False
     
     text = getattr(response, 'text', None)
 
     if not text:
-        print('Error: Gemini returned an empty response')
-        return [], 'empty_response'
+        logger.error('Gemini returned empty response')
+        return [], False
     
-    if "[" not in text or "]" not in text:
-        print('Error: no python list found in Gemini response')
-        return [], 'no_list'
+    if '[' not in text or ']' not in text:
+        logger.warning(
+            'No list found in Gemini response text=%s', 
+            text[:100]
+        )
+        return [], False
     
     try:
         inside = text.split('[', 1)[1].split(']', 1)[0]
@@ -114,15 +141,22 @@ def extract_index_numbers(response, max_len):
             i for i in indices if 0 <= i < max_len
         ]
 
-        print(f'Extracted {len(validated_indices)} indices')
+        logger.debug(
+            'Extracted indices count=%d valid_count=%d max_len=%d',
+            len(indices),
+            len(validated_indices),
+            max_len
+        )
 
-        return validated_indices, 'ok'
+        return validated_indices, True
     
-    except ValueError as e:
-        print('Error: unable to extract index numbers from python list:\n')
-        print(f'    text={text}')
-        print(f'    {type(e).__name__}: {e}')
-        return [], 'parse_error'
+    except ValueError:
+        logger.error(
+            'Failed to parse indices from Gemini response text=%s',
+            text[:200],
+            exc_info=True
+        )
+        return [], False
 
 
 
@@ -154,35 +188,76 @@ def return_risk_headlines(client, prompt, i, max_len, config):
     wait_time = config.LLM_WAIT_TIME
     model = config.BASIC_MODEL
 
+    logger.debug(
+        'Requesting risk headline identification batch=%d model=%s max_len=%d retry_attempts=%d',
+        i,
+        model,
+        max_len,
+        retry_attempts
+    )
     
     for attempt in range(1, retry_attempts + 1):
         try:
+            logger.debug(
+                'Calling Gemini batch=%d attempt=%d/%d',
+                i,
+                attempt,
+                retry_attempts
+            )
+
             response = client.models.generate_content(
                 model=model, 
                 contents=prompt
             )
-            index_numbers, status = extract_index_numbers(response, max_len)
+            index_numbers, response_parsed = extract_index_numbers(response, max_len)
 
-            if status == 'ok':
+            if response_parsed:
+                logger.debug(
+                    'Parsed risk headline indices batch=%d attempt=%d/%d count=%d',
+                    i,
+                    attempt,
+                    retry_attempts,
+                    len(index_numbers)
+                )
                 return index_numbers
-            else:
-                if attempt < retry_attempts:
-                    print(f'Error: could not parse index numbers for batch {i} on attempt {attempt}/{retry_attempts}')
-                    time.sleep(wait_time * attempt)
-                else:
-                    print(f'Error: parsing failed for batch {i} after {retry_attempts} attempts.')
-                    return []
-
-        except Exception as e:
+            
             if attempt < retry_attempts:
-                print(f'Error: LLM call failed batch {i} on attempt {attempt}/{retry_attempts}')
-                print(f'    Error type: {type(e).__name__}')
-                print(f'    Error message: {e}')
-                time.sleep(wait_time * attempt)
+                sleep_seconds = wait_time * attempt
+                logger.warning(
+                    'Could not parse Gemini response batch=%d attempt=%d/%d; retrying in %ds',
+                    i,
+                    attempt,
+                    retry_attempts,
+                    sleep_seconds
+                )
+                time.sleep(sleep_seconds)
             else:
-                print(f'Error: LLM call failed for batch {i} after {retry_attempts} attempts.')
-                print(f'    Error type: {type(e).__name__}')
-                print(f'    Error message: {e}')
+                logger.error(
+                    'Could not parse Gemini response batch=%d after %d attempts',
+                    i,
+                    retry_attempts
+                )
+                return []
+
+        except Exception:
+            if attempt < retry_attempts:
+                sleep_seconds = wait_time * attempt
+                logger.warning(
+                    'LLM call failed batch=%d attempt=%d/%d; retrying in %ds',
+                    i,
+                    attempt,
+                    retry_attempts,
+                    sleep_seconds,
+                    exc_info=True
+                )
+                time.sleep(sleep_seconds)
+            else:
+                logger.error(
+                    'LLM call failed batch=%d after %d attempts',
+                    i,
+                    retry_attempts,
+                    exc_info=True
+                )
                 return []         
 
 
@@ -211,6 +286,13 @@ def identify_risk_headlines(client, new_headlines_df, config):
     """
     max_len = len(new_headlines_df)
 
+    logger.info(
+        'Starting risk headline identification total_headlines=%d batch_size=%d model=%s',
+        max_len,
+        config.LLM_HEADLINE_BATCH_SIZE,
+        config.BASIC_MODEL
+    )
+
     numbered_headlines = number_headlines(new_headlines_df)
 
     headline_batches = batch_headlines(numbered_headlines, config)
@@ -218,6 +300,11 @@ def identify_risk_headlines(client, new_headlines_df, config):
     all_indices = []
 
     for i, batch in enumerate(headline_batches, start=1):
+        logger.debug(
+            'Processing batch batch_num=%d batch_size=%d',
+            i,
+            len(batch)
+        )
         prompt = headline_identification_prompt(
             batch,
             config
@@ -231,13 +318,30 @@ def identify_risk_headlines(client, new_headlines_df, config):
             config
         )
 
+        logger.debug(
+            'Batch completed batch_num=%d indices_found=%d',
+            i,
+            len(indices)
+        )
+
         all_indices.extend(indices)
+
+    unique_indices = set(all_indices)
+    dup_count = len(all_indices) - len(unique_indices)
 
     dup_count = len(all_indices) - len(set(all_indices))
 
     if dup_count > 0:
-        print(f'Warning: {dup_count} duplicate indices')
+        logger.warning(
+            'Duplicate indices detected duplicate_count=%d total_indices=%d',
+            dup_count,
+            len(all_indices)
+        )
 
-    logger.info('Identified risk headlines count=%d', len(all_indices))
+    logger.info(
+        'Finished identifying risk headlines total_headlines=%d unique_headlines=%d',
+        len(all_indices),
+        len(unique_indices)
+    )
 
     return new_headlines_df.iloc[all_indices]
