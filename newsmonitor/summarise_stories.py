@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------
-# BATCHING FUNCTIONS
+# HELPER FUNCTIONS
 # ----------------------------------------------------------------------
 
 def batch_story_texts(story_texts, config):
@@ -40,13 +40,20 @@ def batch_story_texts(story_texts, config):
     if max_words <= 0:
         raise ValueError('max_words must be greater than 0')
     
+    logger.info(
+        'Starting story batching total_stories=%d max_words=%d',
+        len(story_texts),
+        max_words
+    )
+    
     batches = []
     current_batch = []
     words_counter = 0
 
-    for story in story_texts:
+    for i, story in enumerate(story_texts, start=1):
 
         if not isinstance(story, str) or not story.strip():
+            logger.debug('Skipping invalid story index=%d', i)
             continue
         
         story_words = len(story.split())
@@ -55,11 +62,18 @@ def batch_story_texts(story_texts, config):
         if story_words > max_words:
 
             if current_batch:
-                print(f'New batch created: {words_counter} words')
+                logger.debug(
+                    'Creating batch words=%d reason=flush_before_large_story',
+                    words_counter
+                )
                 batches.append(' '.join(current_batch))
                 current_batch, words_counter = [], 0
 
-            print(f'New batch created: {story_words} words')
+            logger.debug(
+                'Creating batch words=%d reason=single_large_story index=%d',
+                story_words,
+                i
+            )
             batches.append(story)
             continue
 
@@ -70,22 +84,32 @@ def batch_story_texts(story_texts, config):
 
         # Batch overflow
         else:
-            print(f'New batch created: {words_counter} words')
+            logger.debug(
+                'Creating batch words=%d reason=overflow',
+                words_counter
+            )
             batches.append(' '.join(current_batch))
             current_batch, words_counter = [story], story_words
 
     if current_batch:
-        print(f'New batch created: {words_counter} words')
+        logger.debug(
+            'Creating final batch words=%d',
+            words_counter
+        )
         batches.append(' '.join(current_batch))
 
-    print(f'\nTotal batches: {len(batches)}\n')
+    logger.info(
+        'Finished story batching total_batches=%d total_stories=%d',
+        len(batches),
+        len(story_texts)
+    )
 
     return batches
 
 
 
 # ----------------------------------------------------------------------
-# SUMMARISATION FUNCTIONS 
+# ORCHESTRATION FUNCTIONS 
 # ----------------------------------------------------------------------
 
 def summarise_story_text_batches(client, story_text_batches, today_date, config):
@@ -115,6 +139,13 @@ def summarise_story_text_batches(client, story_text_batches, today_date, config)
     total_summary_words = 0
     summaries = []
 
+    logger.info(
+        'Starting story batch summarisation total_batches=%d model=%s retry_attempts=%d',
+        len(story_text_batches),
+        basic_model,
+        retry_attempts
+    )
+
     for i, story_text in enumerate(story_text_batches, start=1):
 
         prompt = story_text_summarization_prompt(
@@ -122,6 +153,8 @@ def summarise_story_text_batches(client, story_text_batches, today_date, config)
             story_text,
             config
         )
+
+        logger.debug('Summarising batch=%d', i)
 
         for attempt in range(1, retry_attempts + 1):
             try:
@@ -137,27 +170,49 @@ def summarise_story_text_batches(client, story_text_batches, today_date, config)
                     raise ValueError('Empty summary text returned')
                 
                 summary_word_count = len(summary_text.split())
-                print(f'New summary generated: {summary_word_count} words')
                 total_summary_words += summary_word_count
                 summaries.append(summary_text)
+
+                logger.info(
+                    'Generated summary batch=%d attempt=%d summary_words=%d',
+                    i,
+                    attempt,
+                    summary_word_count
+                )
                 break
 
-            except Exception as e:
+            except Exception:
                 if attempt < retry_attempts:
-                    print(f'Error: LLM call failed on attempt {attempt}/{retry_attempts}')
-                    print(f'    Error type: {type(e).__name__}')
-                    print(f'    Error message: {e}')
+                    logger.warning(
+                        'LLM call failed batch=%d attempt=%d/%d; retrying after %ds',
+                        i,
+                        attempt,
+                        retry_attempts,
+                        llm_wait_time * attempt,
+                        exc_info=True
+                    )
                     time.sleep(llm_wait_time * attempt)
                 else:
-                    print(f'Error: LLM call failed for batch {i} after {retry_attempts} attempts')
-                    print(f'    Error type: {type(e).__name__}')
-                    print(f'    Error message: {e}')
+                    logger.error(
+                        'LLM call failed batch=%d after %d attempts',
+                        i,
+                        retry_attempts,
+                        exc_info=True
+                    )
 
     if not summaries:
-        print('\nError: All story text batches failed to generate summaries.\n')
+        logger.error(
+            'All story text batches failed total_batches=%d',
+            len(story_text_batches)
+        )
         return None
 
-    print(f'\nTotal summary words: {total_summary_words}\n')
+    logger.info(
+        'Finished story batch summarisation total_batches=%d successful_batches=%d total_summary_words=%d',
+        len(story_text_batches),
+        len(summaries),
+        total_summary_words
+    )
     return summaries
 
 
@@ -192,6 +247,13 @@ def get_executive_summary(client, story_text_summaries, today_date, config):
         config
     )
 
+    logger.info(
+        'Starting executive summary generation input_summaries=%d model=%s retry_attempts=%d',
+        len(story_text_summaries),
+        advanced_model,
+        retry_attempts
+    )
+
     for attempt in range(1, retry_attempts + 1):
         try:
             response = client.models.generate_content(
@@ -205,25 +267,34 @@ def get_executive_summary(client, story_text_summaries, today_date, config):
             if not summary_text:
                 raise ValueError('Empty executive summary text returned')
             
+            summary_word_count = len(summary_text.split())
+
+            logger.info(
+                'Generated executive summary attempt=%d summary_words=%d',
+                attempt,
+                summary_word_count
+            )
+            
             return summary_text
             
-        except Exception as e:
+        except Exception:
             if attempt < retry_attempts:
-                print(f'Error: LLM call failed on attempt {attempt}/{retry_attempts}')
-                print(f'    Error type: {type(e).__name__}')
-                print(f'    Error message: {e}')
+                logger.warning(
+                    'LLM call failed for executive summary attempt=%d/%d; retrying after %ds',
+                    attempt,
+                    retry_attempts,
+                    llm_wait_time * attempt,
+                    exc_info=True
+                )
                 time.sleep(llm_wait_time * attempt)
             else:
-                print(f'Error: LLM call failed for executive summary after {retry_attempts} attempts')
-                print(f'    Error type: {type(e).__name__}')
-                print(f'    Error message: {e}')
+                logger.error(
+                    'LLM call failed for executive summary after %d attempts',
+                    retry_attempts,
+                    exc_info=True
+                )
                 return None
 
-
-
-# ----------------------------------------------------------------------
-# ORCHESTRATION FUNCTIONS 
-# ----------------------------------------------------------------------
 
 def summarise_stories(client, story_texts, today_date, config):
     """
@@ -245,7 +316,13 @@ def summarise_stories(client, story_texts, today_date, config):
             Final summary text, or a fallback message if no relevant stories are
             identified or summarisation fails.
     """
+    logger.info(
+        'Starting story summarisation total_story_texts=%d',
+        len(story_texts)
+    )
+
     if not story_texts:
+        logger.info('No story texts to summarise')
         return 'No relevant stories were identified.'
     
     story_text_batches = batch_story_texts(
@@ -264,8 +341,17 @@ def summarise_stories(client, story_texts, today_date, config):
         return 'The LLM was not able to generate a summary'
 
     if len(story_text_summaries) == 1:
-        logger.info('Generated single summary words=%d', len(story_text_summaries[0].split()))
+        summary_word_count = len(story_text_summaries[0].split())
+        logger.info(
+            'Finished story summarisation using single batch summary summary_words=%d',
+            summary_word_count
+        )
         return story_text_summaries[0]
+    
+    logger.info(
+        'Generating executive summary from batch summaries total_batch_summaries=%d',
+        len(story_text_summaries)
+    )
 
     executive_summary = get_executive_summary(
         client,
@@ -277,6 +363,9 @@ def summarise_stories(client, story_texts, today_date, config):
     if not executive_summary:
         return 'The LLM was not able to generate a summary'
 
-    logger.info('Generated executive summary words=%d', len(executive_summary.split()))
+    logger.info(
+        'Finished story summarisation using executive summary summary_words=%d',
+        len(executive_summary.split())
+    )
 
     return executive_summary
