@@ -38,12 +38,43 @@ def store_data(final_summary, new_headlines_df, today_date, config):
         config (module):
             Configuration module containing 'DB_PATH'.
     """
-    connection, cursor = initialise_database(config)
+    connection = None
 
-    summary_id = insert_summary(final_summary, today_date, cursor, config)
-    insert_headlines(new_headlines_df, summary_id, cursor)
+    logger.info(
+        'Starting data storage date=%s headline_count=%d path=%s',
+        today_date,
+        len(new_headlines_df),
+        config.DB_PATH
+    )
 
-    connection.commit()
-    connection.close()
+    try:
+        connection, cursor = initialise_database(config)
 
-    logger.info('Stored data summary_id=%s', summary_id)
+        summary_id = insert_summary(final_summary, today_date, cursor, config)
+        insert_headlines(new_headlines_df, summary_id, cursor)
+
+        connection.commit()
+
+        logger.info(
+            'Finished data storage summary_id=%d date=%s headline_count=%d',
+            summary_id,
+            today_date,
+            len(new_headlines_df)
+        )
+
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+
+        logger.error(
+            'Failed data storage date=%s headline_count=%d path=%s',
+            today_date,
+            len(new_headlines_df),
+            config.DB_PATH,
+            exc_info=True
+        )
+        raise
+
+    finally:
+        if connection is not None:
+            connection.close()
