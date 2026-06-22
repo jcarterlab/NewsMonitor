@@ -105,16 +105,10 @@ def summarise_story_text_batches(client, story_text_batches, today_date, config)
     retry_attempts = config.LLM_RETRY_ATTEMPTS
     llm_wait_time = config.LLM_WAIT_TIME
     basic_model = config.BASIC_MODEL
+    wait_time = config.LLM_WAIT_TIME
 
     total_summary_words = 0
     summaries = []
-
-    logger.info(
-        'Starting story batch summarisation total_batches=%d model=%s retry_attempts=%d',
-        len(story_text_batches),
-        basic_model,
-        retry_attempts
-    )
 
     for i, story_text in enumerate(story_text_batches, start=1):
 
@@ -124,9 +118,10 @@ def summarise_story_text_batches(client, story_text_batches, today_date, config)
             config
         )
 
-        logger.debug('Summarising batch=%d', i)
-
         for attempt in range(1, retry_attempts + 1):
+
+            backoff_time = wait_time * (2 ** (attempt - 1))
+
             try:
                 response = client.models.generate_content(
                     model=basic_model, 
@@ -143,25 +138,11 @@ def summarise_story_text_batches(client, story_text_batches, today_date, config)
                 total_summary_words += summary_word_count
                 summaries.append(summary_text)
 
-                logger.info(
-                    'Generated summary batch=%d attempt=%d summary_words=%d',
-                    i,
-                    attempt,
-                    summary_word_count
-                )
                 break
 
             except Exception:
                 if attempt < retry_attempts:
-                    logger.warning(
-                        'LLM call failed batch=%d attempt=%d/%d; retrying after %ds',
-                        i,
-                        attempt,
-                        retry_attempts,
-                        llm_wait_time * attempt,
-                        exc_info=True
-                    )
-                    time.sleep(llm_wait_time * attempt)
+                    time.sleep(backoff_time)
                 else:
                     logger.error(
                         'LLM call failed batch=%d after %d attempts',
@@ -171,18 +152,8 @@ def summarise_story_text_batches(client, story_text_batches, today_date, config)
                     )
 
     if not summaries:
-        logger.error(
-            'All story text batches failed total_batches=%d',
-            len(story_text_batches)
-        )
         return None
 
-    logger.info(
-        'Finished story batch summarisation total_batches=%d successful_batches=%d total_summary_words=%d',
-        len(story_text_batches),
-        len(summaries),
-        total_summary_words
-    )
     return summaries
 
 
@@ -208,6 +179,7 @@ def get_executive_summary(client, story_text_summaries, today_date, config):
     retry_attempts = config.LLM_RETRY_ATTEMPTS
     llm_wait_time = config.LLM_WAIT_TIME
     advanced_model = config.ADVANCED_MODEL
+    wait_time = config.LLM_WAIT_TIME
 
     combined_summaries = "\n\n".join(story_text_summaries)
 
@@ -217,14 +189,10 @@ def get_executive_summary(client, story_text_summaries, today_date, config):
         config
     )
 
-    logger.info(
-        'Starting executive summary generation input_summaries=%d model=%s retry_attempts=%d',
-        len(story_text_summaries),
-        advanced_model,
-        retry_attempts
-    )
-
     for attempt in range(1, retry_attempts + 1):
+
+        backoff_time = wait_time * (2 ** (attempt - 1))
+
         try:
             response = client.models.generate_content(
                 model=advanced_model, 
@@ -238,31 +206,13 @@ def get_executive_summary(client, story_text_summaries, today_date, config):
                 raise ValueError('Empty executive summary text returned')
             
             summary_word_count = len(summary_text.split())
-
-            logger.info(
-                'Generated executive summary attempt=%d summary_words=%d',
-                attempt,
-                summary_word_count
-            )
             
             return summary_text
             
         except Exception:
             if attempt < retry_attempts:
-                logger.warning(
-                    'LLM call failed for executive summary attempt=%d/%d; retrying after %ds',
-                    attempt,
-                    retry_attempts,
-                    llm_wait_time * attempt,
-                    exc_info=True
-                )
-                time.sleep(llm_wait_time * attempt)
+                time.sleep(backoff_time)
             else:
-                logger.error(
-                    'LLM call failed for executive summary after %d attempts',
-                    retry_attempts,
-                    exc_info=True
-                )
                 return None
 
 
@@ -286,13 +236,8 @@ def summarise_stories(client, story_texts, today_date, config):
             Final summary text, or a fallback message if no relevant stories are
             identified or summarisation fails.
     """
-    logger.info(
-        'Starting story summarisation total_story_texts=%d',
-        len(story_texts)
-    )
 
     if not story_texts:
-        logger.info('No story texts to summarise')
         return 'No relevant stories were identified.'
     
     story_text_batches = batch_story_texts(
@@ -312,16 +257,7 @@ def summarise_stories(client, story_texts, today_date, config):
 
     if len(story_text_summaries) == 1:
         summary_word_count = len(story_text_summaries[0].split())
-        logger.info(
-            'Finished story summarisation using single batch summary summary_words=%d',
-            summary_word_count
-        )
         return story_text_summaries[0]
-    
-    logger.info(
-        'Generating executive summary from batch summaries total_batch_summaries=%d',
-        len(story_text_summaries)
-    )
 
     executive_summary = get_executive_summary(
         client,
@@ -332,10 +268,5 @@ def summarise_stories(client, story_texts, today_date, config):
 
     if not executive_summary:
         return 'The LLM was not able to generate a summary'
-
-    logger.info(
-        'Finished story summarisation using executive summary summary_words=%d',
-        len(executive_summary.split())
-    )
 
     return executive_summary
