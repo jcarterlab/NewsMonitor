@@ -35,14 +35,12 @@ def initialise_database(config):
             SQLite connection and cursor.
     """
     try:
-        logger.info('Initialising database path=%s', config.DB_PATH)
 
         connection = sqlite3.connect(config.DB_PATH)
         cursor = connection.cursor()
 
         cursor.execute("PRAGMA foreign_keys = ON")
 
-        logger.debug('Ensuring "summaries" table exists')
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS summaries (
                 id INTEGER PRIMARY KEY,
@@ -52,7 +50,6 @@ def initialise_database(config):
             )
         ''')
 
-        logger.debug('Ensuring "headlines" table exists')
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS headlines (
                 id INTEGER PRIMARY KEY,
@@ -66,16 +63,9 @@ def initialise_database(config):
             )
         ''')
 
-        logger.info('Database initialised successfully path=%s', config.DB_PATH)
-
         return connection, cursor
     
     except Exception:
-        logger.error(
-            'Failed to initialise database path=%s',
-            config.DB_PATH,
-            exc_info=True
-        )
         raise
 
 
@@ -96,22 +86,13 @@ def get_existing_links(cursor):
         set:
             Set of existing headline links.
     """
-    logger.debug('Fetching existing links from database')
 
     try:
         cursor.execute('SELECT link FROM headlines')
         links = {row[0] for row in cursor}    
     except Exception: 
-        logger.error(
-            'Failed to fetch existing links from headlines table', 
-            exc_info=True
-        )
         raise
 
-    logger.debug(
-        'Retrieved existing links count=%d', 
-        len(links)
-    )
     return links
 
 
@@ -129,29 +110,13 @@ def filter_new_headlines(headlines_df, existing_links):
         pandas.DataFrame:
             DataFrame containing only new headlines.
     """
-    logger.debug(
-        'Filtering new headlines initial_count=%d existing_links=%d',
-        len(headlines_df),
-        len(existing_links)
-    )
 
     try: 
         deduplicated_df = headlines_df.drop_duplicates(subset='link')
         new_headlines_df = deduplicated_df[~deduplicated_df['link'].isin(existing_links)].copy()
 
     except Exception:
-        logger.error(
-            'Failed to filter new headlines',
-            exc_info=True
-        )
         raise
-
-    logger.debug(
-        'Filtered new headlines new_count=%d removed_duplicates=%d removed_existing=%d',
-        len(new_headlines_df),
-        len(headlines_df) - len(deduplicated_df),
-        len(deduplicated_df) - len(new_headlines_df)
-    )
 
     return new_headlines_df
 
@@ -181,13 +146,6 @@ def insert_summary(summary_text, today_date, cursor, config):
     """
     topic = config.TOPIC_OF_CONCERN
 
-    logger.debug(
-        'Inserting summary date=%s topic=%s word_count=%d',
-        today_date,
-        topic,
-        len(summary_text.split())
-    )
-
     try:
         cursor.execute('''
             INSERT INTO summaries (
@@ -201,20 +159,7 @@ def insert_summary(summary_text, today_date, cursor, config):
         summary_id = cursor.lastrowid
 
     except Exception:
-        logger.error(
-            'Failed to insert summary date=%s topic=%s',
-            today_date,
-            topic,
-            exc_info=True
-        )
         raise
-
-    logger.info(
-        'Inserted summary summary_id=%d date=%s topic=%s',
-        summary_id,
-        today_date,
-        topic
-    )
 
     return summary_id
 
@@ -231,11 +176,6 @@ def insert_headlines(new_headlines_df, summary_id, cursor):
         cursor (sqlite3.Cursor):
             Active SQLite cursor.
     """
-    logger.debug(
-        'Inserting headlines summary_id=%d input_count=%d',
-        summary_id,
-        len(new_headlines_df)
-    )
 
     try:
         df = new_headlines_df.copy()
@@ -257,20 +197,7 @@ def insert_headlines(new_headlines_df, summary_id, cursor):
         inserted_count = cursor.rowcount
 
     except Exception:
-        logger.error(
-            'Failed to insert headlines summary_id=%d',
-            summary_id,
-            exc_info=True
-        )
         raise
-
-    logger.info(
-        'Inserted headlines summary_id=%d inserted_count=%d attempted=%d ignored=%d',
-        summary_id,
-        inserted_count,
-        len(new_headlines_df),
-        len(new_headlines_df) - inserted_count
-    )
 
 
 

@@ -53,11 +53,6 @@ def extract_story_text(elements, website, story_url):
             Text from a news story joined as a single string. 
     """
     if not elements:
-        logger.warning(
-            'No elements found for story website=%s url=%s',
-            website,
-            story_url
-        )
         return None
 
     seen = set()
@@ -81,19 +76,7 @@ def extract_story_text(elements, website, story_url):
         paragraphs.append(text)
 
     if not paragraphs:
-        logger.warning(
-            'No usable paragraphs extracted website=%s url=%s',
-            website,
-            story_url
-        )
         return None
-
-    logger.debug(
-        'Extracted paragraphs count=%d website=%s url=%s',
-        len(paragraphs),
-        website,
-        story_url
-    )
 
     return ' '.join(paragraphs) 
 
@@ -126,12 +109,6 @@ def scrape_story_elements(website, story_url, story_tag, story_class, config):
             timeout=config.REQUEST_TIMEOUT)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        logger.error(
-            'Failed to fetch story website=%s url=%s',
-            website,
-            story_url,
-            exc_info=True
-        )
         return []
 
     soup = BeautifulSoup(response.content, "html.parser")
@@ -149,13 +126,6 @@ def scrape_story_elements(website, story_url, story_tag, story_class, config):
             story_tag,
             story_class
         )
-
-    logger.debug(
-        'Scraped elements count=%d website=%s url=%s',
-        len(elements),
-        website,
-        story_url
-    )
 
     return elements 
 
@@ -183,11 +153,6 @@ def scrape_stories(target_headlines_df, config):
     story_texts = []
     total_words = 0
 
-    logger.info(
-        'Starting story scraping total_stories=%d',
-        total_stories
-    )
-
     for row in target_headlines_df.itertuples():
         website = row.website
         story_url = row.link
@@ -211,12 +176,5 @@ def scrape_stories(target_headlines_df, config):
 
         story_texts.append(story_text)
         total_words += len(story_text.split())
-
-    logger.info(
-        'Finished story scraping total=%d success=%d words=%d',
-        total_stories,
-        len(story_texts),
-        total_words
-    )
 
     return story_texts

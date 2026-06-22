@@ -40,12 +40,6 @@ def batch_story_texts(story_texts, config):
     if max_words <= 0:
         raise ValueError('max_words must be greater than 0')
     
-    logger.info(
-        'Starting story batching total_stories=%d max_words=%d',
-        len(story_texts),
-        max_words
-    )
-    
     batches = []
     current_batch = []
     words_counter = 0
@@ -53,7 +47,6 @@ def batch_story_texts(story_texts, config):
     for i, story in enumerate(story_texts, start=1):
 
         if not isinstance(story, str) or not story.strip():
-            logger.debug('Skipping invalid story index=%d', i)
             continue
         
         story_words = len(story.split())
@@ -62,18 +55,9 @@ def batch_story_texts(story_texts, config):
         if story_words > max_words:
 
             if current_batch:
-                logger.debug(
-                    'Creating batch words=%d reason=flush_before_large_story',
-                    words_counter
-                )
                 batches.append(' '.join(current_batch))
                 current_batch, words_counter = [], 0
 
-            logger.debug(
-                'Creating batch words=%d reason=single_large_story index=%d',
-                story_words,
-                i
-            )
             batches.append(story)
             continue
 
@@ -84,25 +68,11 @@ def batch_story_texts(story_texts, config):
 
         # Batch overflow
         else:
-            logger.debug(
-                'Creating batch words=%d reason=overflow',
-                words_counter
-            )
             batches.append(' '.join(current_batch))
             current_batch, words_counter = [story], story_words
 
     if current_batch:
-        logger.debug(
-            'Creating final batch words=%d',
-            words_counter
-        )
         batches.append(' '.join(current_batch))
-
-    logger.info(
-        'Finished story batching total_batches=%d total_stories=%d',
-        len(batches),
-        len(story_texts)
-    )
 
     return batches
 

@@ -43,19 +43,8 @@ def extract_text(element, page_url):
     
     try: 
         text = element.get_text(' ', strip=True)
-        logger.debug(
-            'Extracted headline chars=%d text=%s',
-            len(text) if text else 0,
-            text[:80] if text else ''
-        )
         return ' '.join(text.split()) if text else None
-    except Exception:
-        logger.error(
-            'Failed to extract headline url=%s element=%s',
-            page_url,
-            repr(element)[:50],
-            exc_info=True
-        )        
+    except Exception:      
         return None
 
 
@@ -81,21 +70,9 @@ def extract_link(element, page_url, base_url):
     try:
         href = element.get('href')
         link = urljoin(base_url, href) if href else None
-        logger.debug(
-            'Built link base=%s href=%s final=%s', 
-            base_url, 
-            href, 
-            link
-        )
         return link 
 
     except Exception:
-        logger.error(
-            'Failed to extract link url=%s element=%s',
-            page_url,
-            repr(element)[:50],
-            exc_info=True
-        ) 
         return None
 
 
@@ -127,21 +104,9 @@ def scrape_headline_elements(website, page_url, tag, config):
 
         soup = BeautifulSoup(response.content, 'html.parser')
         elements = soup.find_all(tag)
-        logger.debug(
-            'Found headline elements source=%s tag=%s found=%d', 
-            website, 
-            tag, 
-            len(elements)
-        )
         return elements
 
     except requests.exceptions.RequestException:
-        logger.error(
-            'Request failed url=%s tag=%s',
-            page_url,
-            tag,
-            exc_info=True
-        ) 
         return None
 
 
@@ -190,12 +155,6 @@ def process_headlines(
         return pd.DataFrame(columns=columns)
 
     if not elements:
-        logger.warning(
-            'No headline elements found source=%s page_url=%s tag=%s',
-            website,
-            page_url,
-            tag
-        )
         return pd.DataFrame(columns=columns)
 
     headlines = []
@@ -216,12 +175,6 @@ def process_headlines(
             'story_class': story_class
         })
 
-    logger.info(
-        'Scraped headlines source=%s count=%d', 
-        website, 
-        len(headlines)
-    )
-
     return pd.DataFrame(headlines, columns=columns)
 
 
@@ -239,11 +192,6 @@ def scrape_headlines(config):
             Combined headlines with columns including headline, link, story_tag and story_class. 
     """
     links_path = config.LINKS_PATH
-
-    logger.info(
-        'Starting headline scraping links_path=%s',
-        links_path
-    )
 
     try:
         links_df = pd.read_csv(links_path, encoding='utf-8')
@@ -275,13 +223,6 @@ def scrape_headlines(config):
                 headlines_dfs.append(df)
 
         except Exception:
-            logger.error(
-                'Failed to process source=%s url=%s tag=%s',
-                row.website,
-                row.page_url,
-                row.tag,
-                exc_info=True
-            )
             continue
         
     if not headlines_dfs:
@@ -291,11 +232,5 @@ def scrape_headlines(config):
 
     if headlines_df.empty:
         raise RuntimeError('No headlines were extracted from any source')
-
-    logger.info(
-        'Finished scraping headlines source_count=%s headlines_count=%d', 
-        len(links_df), 
-        len(headlines_df)
-    )
 
     return headlines_df
