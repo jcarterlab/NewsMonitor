@@ -40,13 +40,6 @@ def store_data(final_summary, new_headlines_df, today_date, config):
     """
     connection = None
 
-    logger.info(
-        'Starting data storage date=%s headline_count=%d path=%s',
-        today_date,
-        len(new_headlines_df),
-        config.DB_PATH
-    )
-
     try:
         connection, cursor = initialise_database(config)
 
@@ -55,24 +48,10 @@ def store_data(final_summary, new_headlines_df, today_date, config):
 
         connection.commit()
 
-        logger.info(
-            'Finished data storage summary_id=%d date=%s headline_count=%d',
-            summary_id,
-            today_date,
-            len(new_headlines_df)
-        )
-
     except Exception:
         if connection is not None:
             connection.rollback()
-
-        logger.error(
-            'Failed data storage date=%s headline_count=%d path=%s',
-            today_date,
-            len(new_headlines_df),
-            config.DB_PATH,
-            exc_info=True
-        )
+            
         raise
 
     finally:

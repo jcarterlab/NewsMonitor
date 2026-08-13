@@ -39,11 +39,6 @@ def deduplicate_headlines(headlines_df, config):
         pandas.DataFrame:
             DataFrame containing only new headlines.
     """
-    logger.info(
-        'Starting headline deduplication input_count=%d db_path=%s',
-        len(headlines_df),
-        config.DB_PATH
-    )
 
     connection = None
 
@@ -56,22 +51,10 @@ def deduplicate_headlines(headlines_df, config):
         connection.commit()
 
     except Exception:
-        logger.error(
-            'Headline deduplication failed input_count=%d db_path=%s',
-            len(headlines_df),
-            config.DB_PATH,
-            exc_info=True
-        )
         raise
 
     finally:
         if connection is not None:
             connection.close()
 
-    logger.info(
-        'Completed headline deduplication input_count=%d new_count=%d removed_count=%d',
-        len(headlines_df),
-        len(new_headlines_df),
-        len(headlines_df) - len(new_headlines_df)
-    )
     return new_headlines_df

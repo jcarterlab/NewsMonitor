@@ -1,180 +1,58 @@
 # 📰 NewsMonitor
 
-A Python news monitoring pipeline that uses web scraping, LLMs and optional email alerts.
+An LLM-powered news monitoring pipeline for tracking and analysing news across multiple sources and languages.
 
-The system allows analysts to detect emerging risks such as supply chain disruptions, regulatory changes and geopolitical events more efficiently. It is particularly useful in regions with many non-English sources because LLMs are excellent at simultaneously translating and summarizing raw news content. News monitoring can be customised based on the topic of concern (e.g. transport disruption events), entity of concern (e.g. a logistics firm operating in Colombia) and confidence threshold (e.g. the LLM must be at least 95% sure a headline is relevant before scraping the story text). 
+## Overview
 
-**Key technologies:** Python, BeautifulSoup, SQLite, Pandas, Google Gemini API, Resend.
+NewsMonitor scrapes news headlines, identifies relevant stories using an LLM, summarises the underlying articles and optionally sends email alerts.
 
+The pipeline can be configured around a **topic**, **entity** and **confidence threshold**, making it suitable for a wide range of applications — from tracking technology trends and financial developments to monitoring emerging-market risks.
 
-## 🔍 Overview
+**Tech stack:** Python · BeautifulSoup · SQLite · Pandas · Google Gemini · Resend
 
-The pipeline performs the following steps:
+## Features
 
-1. Scrapes headlines from multiple news pages
-2. Deduplicates headlines against an SQLite database
-3. Uses an LLM to identify target headlines
-4. Scrapes full article texts for flagged stories
-5. Uses two-stage LLM summarisation to generate a single summary
-6. Saves the summary and processed headlines to an SQLite database
-7. Optionally sends an email alert to the end user(s)
+* 🌐 **Multi-source monitoring** — Monitor multiple websites and languages from a single pipeline
+* 🎯 **Targeted analysis** — Focus on specific topics, entities or events
+* 🧠 **LLM relevance detection** — Filter headlines before processing full articles
+* 🌍 **Cross-language analysis** — Translate and summarise non-English sources
+* 💾 **Persistent results** — Store processed headlines and summaries in SQLite
+* 📧 **Automated alerts** — Deliver summaries directly to users by email
+* ⚙️ **Configurable pipeline** — Adapt sources, models and processing parameters
 
-## 🧪 Example Flow
+## How It Works
 
-```
-links.csv
-     │
-     ▼
-scrape_headlines
-     │
-     │ Example output (Spanish headlines):
-     │ [
-     │   'Sindicato ferroviario anuncia protestas nacionales',
-     │   'Paro portuario en Buenaventura amenaza exportaciones',
-     │   'Aumentan las exportaciones de café pese a retrasos logísticos',
-     │   ...
-     │ ]
-     │
-     ▼
-deduplicate_headlines
-     │
-     │ Example output (deduplicated Spanish headlines):
-     │ [
-     │   'Paro portuario en Buenaventura amenaza exportaciones',
-     │   'Aumentan las exportaciones de café pese a retrasos logísticos',
-     │   ...
-     │ ]
-     │
-     ▼
-identify_target_headlines
-     │
-     │ Example output (target headline indices):
-     │ [
-     │   0, 
-     │   7, 
-     │   ...
-     │ ]
-     │
-     ▼
-scrape_stories
-     │
-     │ Example output (Spanish news story text):
-     │ [
-     │   'Trabajadores portuarios en Buenaventura iniciaron un paro...',
-     │   'Autoridades reportan retrasos en la cadena logística tras bloqueo...',
-     │   ...
-     │ ]
-     │
-     ▼
-summarise_stories
-     │
-     │ Example output (English summary in Markdown):
-     │ '''
-     │   ## Summary of Potential Transport Disruption Risks
-     │
-     │   ### Ongoing Labour Disputes
-     │
-     │   Labour disputes in Colombia's port and rail sectors may disrupt
-     │   freight movement and export logistics in the coming days. Also...
-     │ '''
-     │
-     ▼
-store_data
-     │
-     │ Example output (SQLite tables):
-     │
-     │ summaries
-     │ ┌─────┬───────────────────────────────────────┬────────────────┬──────────────────────┐
-     │ │ id  │ summary_text                          │ date_generated │ topic                │
-     │ ├─────┼───────────────────────────────────────┼────────────────┼──────────────────────┤
-     │ │ 1   │ ## Summary of Potential Transport...  │ 2026-03-31     │ transport disruption │
-     │ │ ... │ ...                                   │ ...            │ ...                  │
-     │ └─────┴───────────────────────────────────────┴────────────────┴──────────────────────┘
-     │
-     │ headlines
-     │ ┌─────┬───────────────────────────────────┬──────────────────────────────┬────────────┐
-     │ │ id  │ headline                          │ link                         │ summary_id │
-     │ ├─────┼───────────────────────────────────┼──────────────────────────────┼────────────┤
-     │ │ 1   │ Paro portuario en Buenaventura... │ www.eltiempo.com/nacion/     │ 1          │
-     │ │ 2   │ Aumentan las exportaciones de...  │ www.portafolio.co/economia/  │ 1          │
-     │ │ ... │ ...                               │ ...                          │ ...        │
-     │ └─────┴───────────────────────────────────┴──────────────────────────────┴────────────┘
-     │
-     ▼
-email_summary (optional)
-     │
-     │ Example output (English summary in HTML):
-     │ '''
-     │   SUMMARY OF POTENTIAL TRANSPORT DISRUPTION RISKS
-     │
-     │   ── Ongoing Labour Disputes ──
-     │
-     │   Labour disputes in Colombia's port and rail sectors may disrupt
-     │   freight movement and export logistics in the coming days. Also...
-     │ '''
-     │
-     ▼
-the end user
+```text
+News sources
+     ↓
+Scrape headlines
+     ↓
+Deduplicate against database
+     ↓
+LLM identifies relevant headlines
+     ↓
+Scrape relevant articles
+     ↓
+LLM summarises articles
+     ↓
+Store results in SQLite
+     ↓
+Optional email alert
 ```
 
-## 🚀 Quick Start
+## Example
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/jcarterlab/NewsMonitor.git
-cd NewsMonitor
+NewsMonitor can be configured for different monitoring objectives, for example:
 
-# 2. Create a virtual environment
-python -m venv .venv
+**Technology trends**
 
-# 3. Activate the virtual environment (run the command for your OS)
-
-# macOS / Linux
-source .venv/bin/activate
-
-# Windows (PowerShell)
-.venv\Scripts\Activate.ps1
-
-# 4. Install dependencies
-pip install -r requirements.txt
-
-# 5. Create a .env file from the template and enter your Gemini API key
-cp .env.example .env
-
-# 6. Run the pipeline 
-python main.py
+```env
+TOPIC_OF_CONCERN=artificial intelligence developments
+ENTITY_OF_CONCERN=large language models
+IDENTIFICATION_CONFIDENCE_THRESHOLD=95
 ```
 
-The pipeline will run using the example news sources provided in `links.example.csv` and default configuration. 
-
-## ⚙️ Custom Configuration
-
-The pipeline supports four levels of customisation:
-
-### 1. News sources (recommended)
-
-Create a `links.csv` file from the template and enter the news site URLs and relevant CSS selectors needed to extract headlines and article content. Each row represents a news source the pipeline will monitor.
-
-Example:
-
-```
-┌───────────┬───────────────────────────┬───────────────────┬─────┬───────────┬─────────────┐
-│ website   │ page_url                  │ base_url          │ tag │ story_tag │ story_class │
-├───────────┼───────────────────────────┼───────────────────┼─────┼───────────┼─────────────┤
-│ El Tiempo │ www.eltiempo.com/colombia │ www.eltiempo.com/ │ a   │ div       │ paragraph   │
-│ ...       │ ...                       │ ...               │ ... │ ...       │ ...         │
-└───────────┴───────────────────────────┴───────────────────┴─────┴───────────┴─────────────┘
-```
-
-### 2. Monitoring parameters (recommended)
-
-Edit `.env` to define:
-
-- **Topic of concern** (e.g. transport disruption events)
-- **Entity of concern** (e.g. a logistics firm operating in Colombia)
-- **Confidence threshold** for LLM classification (e.g. 95%)
-
-Example:
+**Emerging-market risk**
 
 ```env
 TOPIC_OF_CONCERN=transport disruption events
@@ -182,126 +60,82 @@ ENTITY_OF_CONCERN=a logistics firm operating in Colombia
 IDENTIFICATION_CONFIDENCE_THRESHOLD=95
 ```
 
-### 3. Pipeline parameters (optional)
-
-Edit `.env` to define:
-
-- **Request heaer** for web scraping (e.g. {"User-Agent": "Mozilla/5.0 (compatible; RiskPipelineBot/1.0)"})
-- **Request timeout** for web scraping (e.g. 10 seconds)
-- **Minimum headline length** for filtering non-headlines (e.g. 25 characters)
-- **Headline batch size** for LLM classification (e.g. 40 headlines)
-- **Retry attempts** for failed LLM API calls before moving on (e.g. 3 attempts)
-- **LLM wait time** between API calls (e.g. 10 seconds)
-- **Basic model** for less complex tasks (e.g. gemini-2.5-flash)
-- **Advanced model** for more complex tasks (e.g. gemini-2.5-pro)
-- **Story words batch size** for LLM summarisation (e.g. 12,000 words)
-
-Example:
+**Financial developments**
 
 ```env
-REQUEST_HEADER={"User-Agent": "Mozilla/5.0 (compatible; RiskPipelineBot/1.0)"}
+TOPIC_OF_CONCERN=interest rate changes
+ENTITY_OF_CONCERN=central banks
+IDENTIFICATION_CONFIDENCE_THRESHOLD=95
+```
+
+For example, a Spanish headline such as:
+
+> Paro portuario en Buenaventura amenaza exportaciones
+
+can be identified as relevant, its full article retrieved and the resulting information incorporated into an English summary.
+
+## Installation
+
+```bash
+git clone https://github.com/jcarterlab/NewsMonitor.git
+cd NewsMonitor
+
+python -m venv .venv
+source .venv/bin/activate  # macOS/Linux or
+.venv\Scripts\Activate.ps1  # Windows PowerShell
+
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+Add your Gemini API key to `.env`, configure `links.csv`, then run:
+
+```bash
+python main.py
+```
+
+## Configuration
+
+### News sources
+
+Create `links.csv` from the provided template and define each source's URL and CSS selectors for extracting headlines and article text.
+
+### Monitoring
+
+Set the topic, entity and classification confidence threshold in `.env`:
+
+```env
+TOPIC_OF_CONCERN=transport disruption events
+ENTITY_OF_CONCERN=a logistics firm operating in Colombia
+IDENTIFICATION_CONFIDENCE_THRESHOLD=95
+```
+
+### Pipeline
+
+Optional parameters control scraping, batching, retries, model selection and summarisation.
+
+```env
 REQUEST_TIMEOUT=10
-MIN_HEADLINE_LENGTH=25
 LLM_HEADLINE_BATCH_SIZE=40
 LLM_RETRY_ATTEMPTS=3
-LLM_WAIT_TIME=10
 BASIC_MODEL=gemini-2.5-flash
 ADVANCED_MODEL=gemini-2.5-pro
-LLM_STORY_WORDS_BATCH_SIZE=12000
 ```
 
-**Note:** Some news websites restrict automated requests. If scraping fails, update the `REQUEST_HEADER` (e.g. `User-Agent`) to mimic a standard browser.
+### Email alerts
 
-### 4. Email alerts (optional)
+Set `EMAIL_ENABLED=true`, provide a Resend API key and configure the sender and recipients using the supplied templates.
 
-To set up email alerts, you must do the following: 
+## Limitations
 
-#### 1) Enter your Resend API key in the .env file.
+* **Web scraping:** News sites may change their HTML structure or restrict automated requests.
+* **LLM classification:** Relevance decisions are probabilistic and depend on the configured model and threshold.
+* **LLM summarisation:** Summaries may omit or misinterpret information from source articles.
+* **Source configuration:** Each news source requires appropriate selectors for headline and article extraction.
+* **API costs and limits:** Monitoring large numbers of sources can increase API usage and runtime.
 
-Example:
+## Inspiration
 
-```env
-RESEND_API_KEY=your_api_key_here
-```
+NewsMonitor builds on my **[Latin Risk Pulse](https://github.com/jcarterlab/Latin-Risk-Pulse-ML-model)** project. This was a previous idea to provide political risk monitoring services focusing on Latin America. 
 
-#### 2) Create an `emails.csv` file from the template and enter your email, name and active status. 
-
-Example:
-
-```
-┌────────────────────────┬─────────────┬──────────────┐
-│ email                  │ name        │ is_active    │
-├────────────────────────┼─────────────┼──────────────┤
-│ your_email@example.com │ your_name   │ true         │
-│ ...                    │ ...         │ ...          │
-└────────────────────────┴─────────────┴──────────────┘
-```
-
-**Note:** Without a verified domain in Resend, emails can only be sent to your own registered email address. To send summaries to multiple recipients, you must register and verify a custom domain.
-
-#### 3) Edit `.env` to define:
-
-- **Email enabled** (e.g. true if you want emails to be sent)
-- **From email** (e.g. your_email@example.com)
-- **Retry attempts** for failed emails before moving on (e.g. 3 attempts)
-- **Email wait time** between email attempts (e.g. 2 seconds)
-
-Example:
-
-```env
-EMAIL_ENABLED=true
-FROM_EMAIL=your_verified_domain@example.com
-EMAIL_RETRY_ATTEMPTS=3
-EMAIL_WAIT_TIME=2
-```
-**Note:** If you do not have a verified domain, you can leave `FROM_EMAIL` blank. Emails will then be sent using Resend’s default sender (`onboarding@resend.dev`), but only to your own email address. 
-
-## 🗂️ Project Structure
-
-```text
-NewsMonitor/
-│
-├── main.py
-├── config.py
-├── links.csv
-├── emails.example.csv
-├── .env.example
-├── requirements.txt
-├── pytest.ini
-│
-├── data/
-│   ├── .gitkeep
-│   └── logs/
-│       └── .gitkeep
-│
-├── utils/
-│   ├── __init__.py
-│   └── database_helpers.py
-│
-├── newsmonitor/
-│   ├── __init__.py
-│   ├── build_prompts.py
-│   ├── scrape_headlines.py
-│   ├── deduplicate_headlines.py
-│   ├── identify_risk_headlines.py
-│   ├── scrape_stories.py
-│   ├── summarise_stories.py
-│   ├── store_data.py
-│   └── email_summary.py
-│
-└── tests/
-    ├── utils/
-    │   └── test_database_helpers.py
-    │
-    └── newsmonitor/
-        ├── test_scrape_headlines.py
-        ├── test_deduplicate_headlines.py
-        ├── test_identify_risk_headlines.py
-        ├── test_scrape_stories.py
-        ├── test_summarise_stories.py
-        └── test_store_data.py
-```
-
-## 📃 License
-
-This project is licensed under the Apache 2.0 License - see the [LICENSE](https://github.com/jcarterlab/NewsMonitor/blob/main/LICENSE) file for details.
+While both projects use web scraping and LLMs to analyse emerging risks, NewsMonitor generalises the approach into a configurable news-monitoring pipeline. Rather than focusing on a fixed set of countries and risk indicators, it can be adapted to different **topics, entities and news sources**.
